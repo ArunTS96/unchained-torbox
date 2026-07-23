@@ -2,7 +2,6 @@ package com.github.livingwithhippos.unchained.user.view
 
 import android.Manifest
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,7 +9,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.github.livingwithhippos.unchained.R
@@ -18,13 +16,7 @@ import com.github.livingwithhippos.unchained.base.UnchainedFragment
 import com.github.livingwithhippos.unchained.data.model.User
 import com.github.livingwithhippos.unchained.databinding.FragmentUserProfileBinding
 import com.github.livingwithhippos.unchained.settings.view.SettingsActivity
-import com.github.livingwithhippos.unchained.settings.view.SettingsFragment.Companion.KEY_REFERRAL_ASKED
-import com.github.livingwithhippos.unchained.settings.view.SettingsFragment.Companion.KEY_REFERRAL_USE
 import com.github.livingwithhippos.unchained.statemachine.authentication.FSMAuthenticationState
-import com.github.livingwithhippos.unchained.utilities.ACCOUNT_LINK
-import com.github.livingwithhippos.unchained.utilities.REFERRAL_LINK
-import com.github.livingwithhippos.unchained.utilities.extension.openExternalWebPage
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -33,7 +25,6 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class UserProfileFragment : UnchainedFragment() {
 
-    @Inject lateinit var preferences: SharedPreferences
 
     private var _binding: FragmentUserProfileBinding? = null
 
@@ -52,7 +43,12 @@ class UserProfileFragment : UnchainedFragment() {
 
         val user: User? = activityViewModel.getCachedUser()
         if (user == null) {
-            activityViewModel.fetchUser()
+            binding.tvName.text = getString(R.string.torbox_connected)
+            binding.tvMail.text = getString(R.string.torbox_profile_description)
+            binding.tvPremium.text = getString(R.string.torbox_ready)
+            binding.tvPremiumDays.text = ""
+            binding.tvPoints.text = ""
+            binding.pointsBar.progress = 0
         } else {
             populateUserView(user)
         }
@@ -77,28 +73,7 @@ class UserProfileFragment : UnchainedFragment() {
         }
 
         binding.bAccount.setOnClickListener {
-            // if we never asked, show a dialog
-            if (!preferences.getBoolean(KEY_REFERRAL_ASKED, false)) {
-                // set asked as true
-                preferences.edit { putBoolean(KEY_REFERRAL_ASKED, true) }
-
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(getString(R.string.referral))
-                    .setMessage(getString(R.string.referral_proposal))
-                    .setNegativeButton(getString(R.string.decline)) { _, _ ->
-                        preferences.edit { putBoolean(KEY_REFERRAL_USE, false) }
-                        context?.openExternalWebPage(ACCOUNT_LINK)
-                    }
-                    .setPositiveButton(getString(R.string.accept)) { _, _ ->
-                        preferences.edit { putBoolean(KEY_REFERRAL_USE, true) }
-                        context?.openExternalWebPage(REFERRAL_LINK)
-                    }
-                    .show()
-            } else {
-                if (preferences.getBoolean(KEY_REFERRAL_USE, false))
-                    context?.openExternalWebPage(REFERRAL_LINK)
-                else context?.openExternalWebPage(ACCOUNT_LINK)
-            }
+            binding.bSettings.performClick()
         }
 
         activityViewModel.fsmAuthenticationState.observe(viewLifecycleOwner) {

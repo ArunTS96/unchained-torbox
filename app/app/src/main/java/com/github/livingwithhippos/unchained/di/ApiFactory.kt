@@ -62,7 +62,7 @@ object ApiFactory {
     fun provideOkHttpClient(): OkHttpClient {
         if (BuildConfig.DEBUG) {
             val logInterceptor: HttpLoggingInterceptor =
-                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+                HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.NONE }
             // HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS }
 
             return OkHttpClient()
@@ -115,7 +115,7 @@ object ApiFactory {
             if (BuildConfig.DEBUG) {
 
                 val logInterceptor: HttpLoggingInterceptor =
-                    HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+                    HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.NONE }
                 // HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS }
 
                 OkHttpClient()

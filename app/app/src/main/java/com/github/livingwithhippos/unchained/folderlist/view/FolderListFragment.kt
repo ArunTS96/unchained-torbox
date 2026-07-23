@@ -72,6 +72,9 @@ class FolderListFragment : UnchainedFragment(), DownloadListListener {
             object : MenuProvider {
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                     menuInflater.inflate(R.menu.folder_bar, menu)
+                    val torBoxTorrent = args.torrent != null
+                    menu.findItem(R.id.share_all).isVisible = !torBoxTorrent
+                    menu.findItem(R.id.copy_all).isVisible = !torBoxTorrent
                 }
 
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -143,6 +146,10 @@ class FolderListFragment : UnchainedFragment(), DownloadListListener {
     }
 
     private fun setup(binding: FragmentFolderListBinding) {
+        if (args.torrent != null) {
+            binding.bShareSelected.visibility = View.GONE
+        }
+
 
         if (viewModel.shouldShowFilters()) {
             binding.cbFilterSize.visibility = View.VISIBLE
@@ -295,7 +302,7 @@ class FolderListFragment : UnchainedFragment(), DownloadListListener {
             args.folder != null -> viewModel.retrieveFolderFileList(args.folder!!)
             args.torrent != null -> {
                 binding.tvTitle.text = args.torrent!!.filename
-                viewModel.retrieveFiles(args.torrent!!.links)
+                viewModel.retrieveTorrentFiles(args.torrent!!)
             }
 
             args.linkList != null -> {

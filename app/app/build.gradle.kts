@@ -20,9 +20,6 @@ fun readProperties(propertiesFile: File) =
 val keyPropertiesFile: File = rootProject.file("signingkey.properties")
 val keyProperties = readProperties(keyPropertiesFile)
 
-val apiPropertiesFile: File = rootProject.file("apikey.properties")
-val apiProperties = readProperties(apiPropertiesFile)
-
 protobuf {
     protoc { artifact = libs.protobuf.core.get().toString() }
     plugins {
@@ -44,11 +41,11 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.github.livingwithhippos.unchained"
+        applicationId = "com.arunts96.unchainedtorbox"
         minSdk = 27
         targetSdk = 37
-        versionCode = 60
-        versionName = "1.7.1"
+        versionCode = 1
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -92,27 +89,6 @@ android {
             versionNameSuffix = "-dev"
             applicationIdSuffix = ".debug"
             signingConfig = signingConfigs.getByName("debug")
-
-            buildConfigField(
-                "String",
-                "COUNTLY_APP_KEY",
-                apiProperties.getOrDefault(
-                    "COUNTLY_APP_KEY",
-                    "\"" +
-                        (System.getenv("COUNTLY_APP_KEY")
-                            ?: "pDJz4WrY9XeBotXAaL9MYrraSwZNyDqfAPy8p38c") +
-                        "\"",
-                ) as String,
-            )
-
-            buildConfigField(
-                "String",
-                "COUNTLY_URL",
-                apiProperties.getOrDefault(
-                    "COUNTLY_URL",
-                    "\"" + (System.getenv("COUNTLY_URL") ?: "http://localhost") + "\"",
-                ) as String,
-            )
         }
 
         release {
@@ -208,8 +184,6 @@ dependencies {
     implementation(libs.jsoup)
 
     implementation(libs.android.work)
-
-    implementation(libs.countly)
 
     implementation(libs.protobuf.javaLite)
 

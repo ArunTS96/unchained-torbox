@@ -19,6 +19,8 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.github.livingwithhippos.unchained.R
+import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.base.UnchainedApplication
 import com.github.livingwithhippos.unchained.start.viewmodel.MainActivityViewModel
 import com.github.livingwithhippos.unchained.utilities.PreferenceKeys
@@ -54,23 +56,31 @@ class DownloadWorker(private val appContext: Context, workerParams: WorkerParame
             return Result.failure()
         }
 
-        val sourceUrl: String? = inputData.getString(MainActivityViewModel.KEY_DOWNLOAD_SOURCE)
+        val sourceReference: String? =
+            inputData.getString(MainActivityViewModel.KEY_DOWNLOAD_SOURCE)
         val fileName: String? = inputData.getString(MainActivityViewModel.KEY_DOWNLOAD_NAME)
         val folderSetting: String? = inputData.getString(MainActivityViewModel.KEY_FOLDER_URI)
 
-        if (sourceUrl == null || fileName == null || folderSetting == null) {
-            Timber.e(
-                "Error getting download source ${sourceUrl == null}, name ${fileName==null} or destination ${folderSetting == null}"
-            )
+        if (sourceReference == null || fileName == null || folderSetting == null) {
+            Timber.e("Error getting download reference or destination")
             showToast(R.string.download_queued_error)
             return Result.failure()
         }
+        val resolvedUrl =
+            TorboxClient(OkHttpClient(), TorboxKeyStore(appContext))
+                .resolveDownloadReference(sourceReference)
+        if (resolvedUrl == null) {
+            Timber.e("TorBox download reference could not be resolved")
+            showToast(R.string.download_link_expired)
+            return Result.failure()
+        }
+
 
         val folderUri: Uri = folderSetting.toUri()
 
         val newFile: DocumentFile? =
             try {
-                getFileDocument(sourceUrl, folderUri, fileName)
+                getFileDocument(resolvedUrl, folderUri, fileName)
             } catch (ex: SecurityException) {
                 Timber.e("User has removed folder permissions")
                 null
@@ -88,7 +98,7 @@ class DownloadWorker(private val appContext: Context, workerParams: WorkerParame
         val notificationID = newFile.hashCode()
         // this id is used for notifications that shouldn't be removed when the worker stops (e.g.
         // download stopped/crashed/completed)
-        val externalNotificationID = sourceUrl.hashCode()
+        val externalNotificationID = sourceReference.hashCode()
 
         try {
             val outputStream = applicationContext.contentResolver.openOutputStream(newFile.uri)
@@ -199,7 +209,7 @@ class DownloadWorker(private val appContext: Context, workerParams: WorkerParame
             showToast(R.string.download_queued)
             // this needs to be blocking, see
             // https://developer.android.com/topic/libraries/architecture/workmanager/advanced/coroutineworker
-            val downloadedSize: Long = downloader.download(sourceUrl)
+            val downloadedSize: Long = downloader.download(resolvedUrl)
 
             // todo: get whole size and check if it correspond
             return if (downloadedSize > 0) {
@@ -223,16 +233,14 @@ class DownloadWorker(private val appContext: Context, workerParams: WorkerParame
                 Result.success()
             } else Result.failure()
         } catch (e: android.accounts.NetworkErrorException) {
-            e.printStackTrace()
 
             showToast(R.string.download_link_expired)
-            Timber.e("Exception occurred while downloading, ${e.message}")
+            Timber.e("TorBox download failed")
             return Result.failure()
         } catch (e: java.lang.Exception) {
-            e.printStackTrace()
 
             showToast(applicationContext.getString(R.string.download_not_started_format, fileName))
-            Timber.e("Exception occurred while downloading, ${e.message}")
+            Timber.e("TorBox download failed due to a network error")
             return Result.failure()
         }
     }
@@ -252,10 +260,12 @@ class DownloadWorker(private val appContext: Context, workerParams: WorkerParame
         val folderUri: DocumentFile? =
             DocumentFile.fromTreeUri(applicationContext, destinationFolder)
         if (folderUri != null) {
-            val extension: String = MimeTypeMap.getFileExtensionFromUrl(sourceUrl)
+            val extension: String =
+                MimeTypeMap.getFileExtensionFromUrl(fileName)
+                    .ifBlank { MimeTypeMap.getFileExtensionFromUrl(sourceUrl) }
             var mime: String? = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
             if (mime == null) {
-                mime = URLConnection.guessContentTypeFromName(sourceUrl)
+                mime = URLConnection.guessContentTypeFromName(fileName)
                 /*
                 if (mime == null) {
                     val connection: URLConnection = URL(link).openConnection()

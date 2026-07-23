@@ -77,21 +77,9 @@ constructor(
 
     fun downloadTorrent(torrent: TorrentItem) {
         viewModelScope.launch {
-            val links = torrent.links
-            if (links.isNotEmpty()) {
-                val items = unrestrictRepository.getUnrestrictedLinkList(links)
-
-                val values =
-                    items.filterIsInstance<EitherResult.Success<DownloadItem>>().map { it.success }
-                val errors =
-                    items.filterIsInstance<EitherResult.Failure<UnchainedNetworkException>>().map {
-                        it.failure
-                    }
-
-                // since the torrent want to open a download details page we oen only the first link
-                downloadLiveData.postEvent(values.firstOrNull())
-                if (errors.isNotEmpty()) errorsLiveData.postEvent(errors)
-            }
+            downloadLiveData.postEvent(
+                torrentsRepository.getDownloadItems(torrent).firstOrNull()
+            )
         }
     }
 }

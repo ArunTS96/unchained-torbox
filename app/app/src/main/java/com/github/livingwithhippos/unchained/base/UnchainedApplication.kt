@@ -9,11 +9,7 @@ import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.data.local.CompleteRemoteService
 import com.github.livingwithhippos.unchained.data.local.ProtoStore
 import com.github.livingwithhippos.unchained.data.local.RemoteDeviceDao
-import com.github.livingwithhippos.unchained.data.local.RepositoryDataDao
-import com.github.livingwithhippos.unchained.data.model.Repository
 import com.github.livingwithhippos.unchained.data.repository.ServiceRepository
-import com.github.livingwithhippos.unchained.utilities.DEFAULT_PLUGINS_REPOSITORY_LINK
-import com.github.livingwithhippos.unchained.utilities.TelemetryManager
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +30,6 @@ class UnchainedApplication : Application() {
 
     @Inject lateinit var protoStore: ProtoStore
 
-    @Inject lateinit var pluginRepositoryDataDao: RepositoryDataDao
     @Inject lateinit var legacyServiceRepository: RemoteDeviceDao
     @Inject lateinit var newServiceRepository: ServiceRepository
 
@@ -48,14 +43,10 @@ class UnchainedApplication : Application() {
 
         scope.launch {
             protoStore.deleteIncompleteCredentials()
-            if (pluginRepositoryDataDao.getDefaultRepository().isEmpty())
-                pluginRepositoryDataDao.insert(Repository(DEFAULT_PLUGINS_REPOSITORY_LINK))
             migrateServices()
         }
 
         createNotificationChannels()
-
-        TelemetryManager.onCreate(this)
     }
 
     private suspend fun migrateServices() {

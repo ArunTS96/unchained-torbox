@@ -6,8 +6,8 @@ const val OPEN_SOURCE_CLIENT_ID = "X245A4XAIBGVM"
 
 const val OPEN_SOURCE_GRANT_TYPE = "http://oauth.net/grant_type/device/1.0"
 
-const val BASE_URL = "https://api.real-debrid.com/rest/1.0/"
-const val BASE_AUTH_URL = "https://api.real-debrid.com/oauth/v2/"
+const val BASE_URL = "https://api.torbox.app/v1/api/"
+const val BASE_AUTH_URL = BASE_URL
 const val REFERRAL_LINK = "http://real-debrid.com/?id=78841"
 const val ACCOUNT_LINK = "https://real-debrid.com/account"
 const val DEFAULT_PLUGINS_REPOSITORY_LINK =
@@ -80,7 +80,17 @@ val errorMap =
 // queued, downloading, downloaded, error, virus, compressing, uploading, dead
 
 /** Statuses the torrent is not going to advance from */
-val endedStatusList = listOf("magnet_error", "downloaded", "ready", "error", "virus", "dead")
+val endedStatusList =
+    listOf(
+        "cached",
+        "completed",
+        "downloaded",
+        "ready",
+        "error",
+        "virus",
+        "dead",
+        "magnet_error",
+    )
 
 /** Statuses the torrent will advance from */
 val loadingStatusList =
@@ -91,10 +101,13 @@ val loadingStatusList =
         "queued",
         "compressing",
         "uploading",
+        "metaDL",
+        "checkingResumeData",
+        "stalled (no seeds)",
     )
 
 /** Statuses where the torrent hasn't had its file selected yet */
-val beforeSelectionStatusList = listOf("magnet_conversion", "waiting_files_selection")
+val beforeSelectionStatusList = emptyList<String>()
 
 const val DOWNLOADS_TAB = 0
 const val TORRENTS_TAB = 1

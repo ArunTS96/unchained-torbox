@@ -57,7 +57,6 @@ import com.github.livingwithhippos.unchained.utilities.SCHEME_HTTP
 import com.github.livingwithhippos.unchained.utilities.SCHEME_HTTPS
 import com.github.livingwithhippos.unchained.utilities.SCHEME_MAGNET
 import com.github.livingwithhippos.unchained.utilities.SIGNATURE
-import com.github.livingwithhippos.unchained.utilities.TelemetryManager
 import com.github.livingwithhippos.unchained.utilities.extension.downloadFileInStandardFolder
 import com.github.livingwithhippos.unchained.utilities.extension.openExternalWebPage
 import com.github.livingwithhippos.unchained.utilities.extension.parcelable
@@ -87,7 +86,6 @@ class MainActivity : AppCompatActivity() {
     // Countly crash reporter set up. Debug mode only
     override fun onStart() {
         super.onStart()
-        TelemetryManager.onStart(this)
 
         val bottomColor = SurfaceColors.SURFACE_2.getColor(this)
         window.navigationBarColor = bottomColor
@@ -96,7 +94,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        TelemetryManager.onStop()
         // todo: implement for TorrentService
         // unbindService()
         super.onStop()
@@ -264,10 +261,6 @@ class MainActivity : AppCompatActivity() {
                 FSMAuthenticationState.AuthenticatedOpenToken -> {
                     // unlock the bottom menu
                     enableAllBottomNavItems()
-                    if (!checkedUpdate) {
-                        checkedUpdate = true
-                        viewModel.checkUpdates(BuildConfig.VERSION_CODE, getApplicationSignatures())
-                    }
                 }
 
                 FSMAuthenticationState.RefreshingOpenToken -> {
@@ -277,10 +270,6 @@ class MainActivity : AppCompatActivity() {
                 FSMAuthenticationState.AuthenticatedPrivateToken -> {
                     // unlock the bottom menu
                     enableAllBottomNavItems()
-                    if (!checkedUpdate) {
-                        checkedUpdate = true
-                        viewModel.checkUpdates(BuildConfig.VERSION_CODE, getApplicationSignatures())
-                    }
                 }
 
                 FSMAuthenticationState.WaitingToken -> {

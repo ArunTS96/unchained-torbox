@@ -218,6 +218,16 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
             binding.llFabAddSubtitle.visibility = View.GONE
         }
 
+        if (args.details.download.startsWith("torbox://")) {
+            binding.llFabShare.visibility = View.GONE
+            binding.llFabOpen.visibility = View.GONE
+            binding.llFabCopy.visibility = View.GONE
+            binding.llFabSendToPlayer.visibility = View.GONE
+            binding.llFabPickStreaming.visibility = View.GONE
+            binding.llFabLoadStreams.visibility = View.GONE
+            binding.llFabAddSubtitle.visibility = View.GONE
+            binding.rvAlternativeList.visibility = View.GONE
+        }
         viewModel.streamLiveData.observe(viewLifecycleOwner) {
             if (it != null) {
                 binding.fabLoadStreams.isEnabled = false

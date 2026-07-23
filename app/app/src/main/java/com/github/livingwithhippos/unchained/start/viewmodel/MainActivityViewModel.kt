@@ -23,6 +23,7 @@ import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.data.local.Credentials
 import com.github.livingwithhippos.unchained.data.local.ProtoStore
 import com.github.livingwithhippos.unchained.data.local.RemoteDevice
+import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
 import com.github.livingwithhippos.unchained.data.local.RemoteService
 import com.github.livingwithhippos.unchained.data.local.RemoteServiceType
 import com.github.livingwithhippos.unchained.data.model.APIError
@@ -34,6 +35,7 @@ import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
 import com.github.livingwithhippos.unchained.data.model.User
 import com.github.livingwithhippos.unchained.data.model.UserAction
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.repository.AuthenticationRepository
 import com.github.livingwithhippos.unchained.data.repository.CustomDownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.HostsRepository
@@ -44,7 +46,6 @@ import com.github.livingwithhippos.unchained.data.repository.PluginRepository.Co
 import com.github.livingwithhippos.unchained.data.repository.RemoteDeviceRepository
 import com.github.livingwithhippos.unchained.data.repository.TorrentsRepository
 import com.github.livingwithhippos.unchained.data.repository.UpdateRepository
-import com.github.livingwithhippos.unchained.data.repository.UserRepository
 import com.github.livingwithhippos.unchained.data.repository.VariousApiRepository
 import com.github.livingwithhippos.unchained.lists.view.ListState
 import com.github.livingwithhippos.unchained.statemachine.authentication.CurrentFSMAuthentication
@@ -89,8 +90,9 @@ constructor(
     private val preferences: SharedPreferences,
     private val protoStore: ProtoStore,
     private val authRepository: AuthenticationRepository,
-    private val userRepository: UserRepository,
     private val variousApiRepository: VariousApiRepository,
+    private val torboxClient: TorboxClient,
+    private val torboxKeyStore: TorboxKeyStore,
     private val hostsRepository: HostsRepository,
     private val pluginRepository: PluginRepository,
     private val kodiDeviceRepository: KodiDeviceRepository,
@@ -385,6 +387,7 @@ constructor(
                     FSMAuthenticationSideEffect.ResetAuthentication -> {
                         // delete the current credentials and restart a login process
                         viewModelScope.launch {
+                            torboxKeyStore.clear()
                             protoStore.deleteCredentials()
                             fsmAuthenticationState.postValue(
                                 Event(FSMAuthenticationState.StartNewLogin)
@@ -404,26 +407,19 @@ constructor(
     }
 
     fun fetchUser() {
-        viewModelScope.launch {
-            val credentials = protoStore.getCredentials()
-            val user = userRepository.getUserInfo(credentials.accessToken)
-            if (user != null) {
-                setCachedUser(user)
-                userLiveData.postEvent(user)
-            }
-        }
+        // TorBox API keys do not expose the old Real-Debrid user profile endpoint.
     }
 
     fun checkCredentials() {
         viewModelScope.launch {
-            // todo: how to do this
-            val credentials: Credentials.CurrentCredential? =
-                protoStore.credentialsFlow.firstOrNull { it.accessToken.isNotBlank() }
-            if (credentials == null) {
-                recheckAuthenticationStatus()
+            if (torboxKeyStore.read().isNullOrBlank()) {
+                transitionAuthenticationMachine(FSMAuthenticationEvent.OnNotWorking)
+            } else if (torboxClient.validateKey()) {
+                transitionAuthenticationMachine(FSMAuthenticationEvent.OnWorkingPrivateToken)
             } else {
-                val userResult = userRepository.getUserOrError(credentials.accessToken)
-                parseUserResult(userResult, credentials.refreshToken == PRIVATE_TOKEN)
+                torboxKeyStore.clear()
+                protoStore.deleteCredentials()
+                transitionAuthenticationMachine(FSMAuthenticationEvent.OnNotWorking)
             }
         }
     }
@@ -479,50 +475,10 @@ constructor(
     }
 
     suspend fun isTokenPrivate(): Boolean {
-        val credentials = protoStore.getCredentials()
-        return credentials.refreshToken == PRIVATE_TOKEN
+        return !torboxKeyStore.read().isNullOrBlank()
     }
 
-    fun refreshToken() {
-
-        viewModelScope.launch {
-            val credentials = protoStore.getCredentials()
-            if (
-                !credentials.refreshToken.isNullOrBlank() &&
-                    credentials.refreshToken != PRIVATE_TOKEN
-            ) {
-                // todo: add EitherResult to check for errors and retry eventually
-                when (val newToken = authRepository.refreshTokenWithError(credentials)) {
-                    is EitherResult.Success -> {
-                        protoStore.setCredentials(
-                            deviceCode = credentials.deviceCode,
-                            clientId = credentials.clientId,
-                            clientSecret = credentials.clientSecret,
-                            accessToken = newToken.success.accessToken,
-                            refreshToken = newToken.success.refreshToken,
-                        )
-
-                        // program the refresh of the token
-                        programTokenRefresh(newToken.success.expiresIn)
-
-                        if (
-                            getAuthenticationMachineState()
-                                is FSMAuthenticationState.RefreshingOpenToken
-                        )
-                            transitionAuthenticationMachine(FSMAuthenticationEvent.OnRefreshed)
-                        // else I'm just refreshing before it expires
-                        // todo: just set it to refreshing at the start of this function
-                    }
-                    is EitherResult.Failure -> {
-                        onParseCallFailure(
-                            newToken.failure,
-                            credentials.deviceCode == PRIVATE_TOKEN,
-                        )
-                    }
-                }
-            }
-        }
-    }
+    /** TorBox keys do not expire and are validated directly by [TorboxClient]. */
 
     private fun onParseCallFailure(failure: UnchainedNetworkException, isPrivateToken: Boolean) {
         when (failure) {
@@ -637,6 +593,9 @@ constructor(
     fun setLastBackPress(time: Long) {
         savedStateHandle[KEY_LAST_BACK_PRESS] = time
     }
+
+    /** TorBox API keys do not expire and are validated directly by [TorboxClient]. */
+    fun refreshToken() = Unit
 
     private fun programTokenRefresh(secondsDelay: Int) {
         refreshJob?.cancel()
@@ -805,9 +764,7 @@ constructor(
     /** Start the authentication machine flow */
     fun startAuthenticationMachine() {
         viewModelScope.launch {
-            // retrieve the datastore credentials (will return en empty instance if none)
-            val protoCredentials = protoStore.getCredentials()
-            if (protoCredentials.accessToken.isNotBlank()) {
+            if (!torboxKeyStore.read().isNullOrBlank()) {
                 transitionAuthenticationMachine(FSMAuthenticationEvent.OnAvailableCredentials)
             } else {
                 transitionAuthenticationMachine(FSMAuthenticationEvent.OnMissingCredentials)

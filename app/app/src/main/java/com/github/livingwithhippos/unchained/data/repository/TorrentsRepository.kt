@@ -1,146 +1,65 @@
 package com.github.livingwithhippos.unchained.data.repository
 
-import com.github.livingwithhippos.unchained.data.local.ProtoStore
 import com.github.livingwithhippos.unchained.data.model.AvailableHost
+import com.github.livingwithhippos.unchained.data.model.DownloadItem
+import com.github.livingwithhippos.unchained.data.model.NetworkError
 import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
 import com.github.livingwithhippos.unchained.data.model.UploadedTorrent
-import com.github.livingwithhippos.unchained.data.remote.TorrentApiHelper
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.utilities.EitherResult
 import javax.inject.Inject
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import timber.log.Timber
 
+/** Repository facade used by the existing UI, backed exclusively by TorBox. */
 class TorrentsRepository
 @Inject
-constructor(protoStore: ProtoStore, private val torrentApiHelper: TorrentApiHelper) :
-    BaseRepository(protoStore) {
+constructor(private val torboxClient: TorboxClient) {
 
-    suspend fun getAvailableHosts(): List<AvailableHost>? {
-        val token = getToken()
-        val hostResponse: List<AvailableHost>? =
-            safeApiCall(
-                call = { torrentApiHelper.getAvailableHosts(token = "Bearer $token") },
-                errorMessage = "Error Retrieving Available Hosts",
-            )
+    suspend fun getAvailableHosts(): List<AvailableHost> =
+        listOf(AvailableHost(TorboxClient.TORBOX_HOST, Int.MAX_VALUE))
 
-        return hostResponse
-    }
-
-    suspend fun getTorrentInfo(id: String): TorrentItem? {
-        val token = getToken()
-        val torrentResponse: TorrentItem? =
-            safeApiCall(
-                call = { torrentApiHelper.getTorrentInfo(token = "Bearer $token", id = id) },
-                errorMessage = "Error Retrieving Torrent Info",
-            )
-
-        return torrentResponse
-    }
+    suspend fun getTorrentInfo(id: String): TorrentItem? = torboxClient.getTorrent(id)
 
     suspend fun addTorrent(
         binaryTorrent: ByteArray,
         host: String,
-    ): EitherResult<UnchainedNetworkException, UploadedTorrent> {
-        val token = getToken()
-
-        val requestBody: RequestBody =
-            binaryTorrent.toRequestBody(
-                "application/octet-stream".toMediaTypeOrNull(),
-                0,
-                binaryTorrent.size,
-            )
-
-        val addTorrentResponse =
-            eitherApiResult(
-                call = {
-                    torrentApiHelper.addTorrent(
-                        token = "Bearer $token",
-                        binaryTorrent = requestBody,
-                        host = host,
-                    )
-                },
-                errorMessage = "Error Uploading Torrent",
-            )
-
-        return addTorrentResponse
-    }
+    ): EitherResult<UnchainedNetworkException, UploadedTorrent> =
+        torboxClient.createTorrentFile(binaryTorrent).asUploadedTorrent("Error uploading torrent")
 
     suspend fun addMagnet(
         magnet: String,
         host: String,
-    ): EitherResult<UnchainedNetworkException, UploadedTorrent> {
-        val token = getToken()
-        val torrentResponse =
-            eitherApiResult(
-                call = {
-                    torrentApiHelper.addMagnet(
-                        token = "Bearer $token",
-                        magnet = magnet,
-                        host = host,
-                    )
-                },
-                errorMessage = "Error Uploading Torrent From Magnet",
-            )
-
-        return torrentResponse
-    }
+    ): EitherResult<UnchainedNetworkException, UploadedTorrent> =
+        torboxClient.createMagnet(magnet).asUploadedTorrent("Error uploading torrent from magnet")
 
     suspend fun getTorrentsList(
         offset: Int? = null,
         page: Int? = 1,
         limit: Int? = 50,
         filter: String? = null,
-    ): List<TorrentItem> {
-        val token = getToken()
-
-        val torrentsResponse: List<TorrentItem>? =
-            safeApiCall(
-                call = {
-                    torrentApiHelper.getTorrentsList(
-                        token = "Bearer $token",
-                        offset = offset,
-                        page = page,
-                        limit = limit,
-                        filter = filter,
-                    )
-                },
-                errorMessage = "Error retrieving the torrents List, or list empty",
-            )
-
-        return torrentsResponse ?: emptyList()
-    }
+    ): List<TorrentItem> = torboxClient.listTorrents()
 
     suspend fun selectFiles(
         id: String,
         files: String = "all",
-    ): EitherResult<UnchainedNetworkException, Unit> {
-        val token = getToken()
+    ): EitherResult<UnchainedNetworkException, Unit> =
+        // TorBox downloads all files; the app filters which files to download locally.
+        EitherResult.Success(Unit)
 
-        Timber.d("Selecting files for torrent: $id")
-        // this call has no return type
-        val response =
-            eitherApiResult(
-                call = {
-                    torrentApiHelper.selectFiles(token = "Bearer $token", id = id, files = files)
-                },
-                errorMessage = "Error Selecting Torrent Files",
-            )
+    suspend fun deleteTorrent(id: String): EitherResult<UnchainedNetworkException, Unit> =
+        if (torboxClient.deleteTorrent(id)) EitherResult.Success(Unit)
+        else EitherResult.Failure(NetworkError(-1, "Error deleting torrent"))
 
-        return response
-    }
-
-    suspend fun deleteTorrent(id: String): EitherResult<UnchainedNetworkException, Unit> {
-        val token = getToken()
-
-        val response =
-            eitherApiResult(
-                call = { torrentApiHelper.deleteTorrent(token = "Bearer $token", id = id) },
-                errorMessage = "Error deleting Torrent",
-            )
-
-        return response
-    }
+    suspend fun getDownloadItems(torrent: TorrentItem): List<DownloadItem> =
+        torboxClient.downloadItems(torrent)
 }
+
+private fun Result<Int>.asUploadedTorrent(
+    errorMessage: String,
+): EitherResult<UnchainedNetworkException, UploadedTorrent> =
+    fold(
+        onSuccess = { id -> EitherResult.Success(UploadedTorrent(id.toString(), "")) },
+        onFailure = {
+            EitherResult.Failure(NetworkError(-1, errorMessage))
+        },
+    )

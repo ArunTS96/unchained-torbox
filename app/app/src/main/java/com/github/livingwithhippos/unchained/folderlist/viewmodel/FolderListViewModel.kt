@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.unchained.data.model.DownloadItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
+import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.repository.DownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.UnrestrictRepository
 import com.github.livingwithhippos.unchained.folderlist.view.FolderListFragment
@@ -30,6 +31,7 @@ constructor(
     private val preferences: SharedPreferences,
     private val unrestrictRepository: UnrestrictRepository,
     private val downloadRepository: DownloadRepository,
+    private val torrentsRepository: com.github.livingwithhippos.unchained.data.repository.TorrentsRepository,
 ) : ViewModel() {
 
     val folderLiveData = MutableLiveData<Event<List<DownloadItem>>>()
@@ -56,6 +58,14 @@ constructor(
                 is EitherResult.Failure -> errorsLiveData.postEvent(filesList.failure)
                 is EitherResult.Success -> retrieveFiles(filesList.success)
             }
+        }
+    }
+
+    fun retrieveTorrentFiles(torrent: TorrentItem) {
+        viewModelScope.launch {
+            val items = torrentsRepository.getDownloadItems(torrent)
+            folderLiveData.postEvent(items)
+            progressLiveData.postValue(100)
         }
     }
 

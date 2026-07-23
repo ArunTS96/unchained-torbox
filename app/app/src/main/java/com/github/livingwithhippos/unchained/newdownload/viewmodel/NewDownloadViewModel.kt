@@ -82,22 +82,13 @@ constructor(
 
     fun fetchUploadedTorrent(binaryTorrent: ByteArray) {
         viewModelScope.launch {
-            val availableHosts = torrentsRepository.getAvailableHosts()
-            if (availableHosts.isNullOrEmpty()) {
-                Timber.e("Error fetching available hosts")
-            } else {
-                val uploadedTorrent =
-                    torrentsRepository.addTorrent(binaryTorrent, availableHosts.first().host)
-                when (uploadedTorrent) {
-                    is EitherResult.Failure -> {
-                        networkExceptionLiveData.postEvent(uploadedTorrent.failure)
-                    }
-                    is EitherResult.Success -> {
-                        // todo: add checks for already chosen torrent/magnet (if possible),
-                        // otherwise we get
-                        // multiple downloads
-                        linkLiveData.postEvent(Link.Torrent(uploadedTorrent.success))
-                    }
+            val uploadedTorrent = torrentsRepository.addTorrent(binaryTorrent, "TorBox")
+            when (uploadedTorrent) {
+                is EitherResult.Failure -> {
+                    networkExceptionLiveData.postEvent(uploadedTorrent.failure)
+                }
+                is EitherResult.Success -> {
+                    linkLiveData.postEvent(Link.Torrent(uploadedTorrent.success))
                 }
             }
         }

@@ -181,7 +181,9 @@ class TorrentDetailsFragment : UnchainedFragment(), TorrentContentListener {
                     binding.pbDownload.setProgressCompat(torrent.progress.toInt(), true)
                     if (
                         torrent.status.equals("downloaded", true) ||
-                            torrent.status.equals("ready", true)
+                            torrent.status.equals("ready", true) ||
+                            torrent.status.equals("cached", true) ||
+                            torrent.status.equals("completed", true)
                     ) {
                         binding.bDownload.visibility = View.VISIBLE
                     } else {
