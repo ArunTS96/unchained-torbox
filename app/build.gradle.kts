@@ -18,6 +18,12 @@ buildscript {
         classpath(libs.kotlin.plugin)
         classpath(libs.navigation.plugin)
         classpath(libs.hilt.plugin)
+        // AGP 9's sdkReleaseDependencyData task needs Tink on the plugin classpath; without it
+        // assembleRelease fails at configuration time with "com/google/crypto/tink/hybrid/HybridConfig".
+        classpath("com.google.crypto.tink:tink:1.17.0")
+        // The protobuf-gradle-plugin pins an older protobuf-java, and AGP 9's
+        // collectReleaseDependencies needs the 4.x generated API (mutableCopy(IntList)).
+        classpath("com.google.protobuf:protobuf-java:4.28.3")
     }
 }
 
