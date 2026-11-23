@@ -41,3 +41,10 @@
 
 # Keep Protobuf Lite generated classes
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
+# R8 stripped the generated protobuf classes and MainActivity died with a ClassCastException on
+# cold start. Keep the generated message types and their fields.
+-keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
+-keep class * extends com.google.protobuf.GeneratedMessageV3 { *; }
+-keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite { <fields>; }
+-keep class com.github.livingwithhippos.unchained.data.local.** { *; }
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod
