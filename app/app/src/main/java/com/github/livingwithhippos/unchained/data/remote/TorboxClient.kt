@@ -101,6 +101,28 @@ constructor(
     fun downloadItems(torrent: TorrentItem): List<DownloadItem> {
         val torrentId = torrent.id.toIntOrNull() ?: return emptyList()
         val files = torrent.files.orEmpty()
+        // TorBox can answer mylist without a files array for a cached single-file torrent. The
+        // folder screen would then render nothing, so fall back to the torrent itself: requestdl
+        // accepts file_id 0 for a one-file torrent (verified against the live API).
+        if (files.isEmpty())
+            return listOf(
+                DownloadItem(
+                    id = torrentId.toString() + "-0",
+                    filename = torrent.filename,
+                    mimeType = null,
+                    fileSize = torrent.originalBytes ?: torrent.bytes,
+                    link = torboxReference(torrentId, 0),
+                    host = TORBOX_HOST,
+                    hostIcon = null,
+                    chunks = 1,
+                    crc = null,
+                    download = torboxReference(torrentId, 0),
+                    streamable = 0,
+                    generated = null,
+                    type = null,
+                    alternative = null,
+                )
+            )
         return files
             .filter { it.selected == 1 || files.size == 1 }
             .map { file ->

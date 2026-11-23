@@ -26,6 +26,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.base.UnchainedFragment
 import com.github.livingwithhippos.unchained.data.model.APIError
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.model.ApiConversionError
 import com.github.livingwithhippos.unchained.data.model.DownloadItem
 import com.github.livingwithhippos.unchained.data.model.EmptyBodyError
@@ -242,7 +243,13 @@ class ListsTabFragment : UnchainedFragment() {
                         when (event.item.status) {
                             "downloaded",
                             "ready" -> {
-                                if (event.item.links.size > 1) {
+                                // A TorBox torrent is always browsed in the folder screen: it is
+                                // the only list that renders TorBox files, and the Downloads tab is
+                                // backed by Put.io and never fills. Same for the second call site.
+                                if (
+                                    event.item.host == TorboxClient.TORBOX_HOST ||
+                                        event.item.links.size > 1
+                                ) {
                                     val action =
                                         ListsTabFragmentDirections
                                             .actionListTabsDestToFolderListFragment2(
@@ -879,7 +886,7 @@ class TorrentsListFragment : UnchainedFragment(), TorrentListListener {
 
             if (item.status == "downloaded" || item.status == "ready") {
                 // unrestrict and move to download tab
-                if (item.links.size > 1) {
+                if (item.host == TorboxClient.TORBOX_HOST || item.links.size > 1) {
                     val action =
                         ListsTabFragmentDirections.actionListTabsDestToFolderListFragment2(
                             folder = null,
