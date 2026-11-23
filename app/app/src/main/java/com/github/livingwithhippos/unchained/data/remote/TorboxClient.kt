@@ -223,13 +223,19 @@ constructor(
 
     private fun parseTorrent(json: JSONObject): TorrentItem? {
         val id = json.optIntOrNull("id") ?: json.optIntOrNull("torrent_id") ?: return null
-        val status = json.optStringAny("status", "state").ifBlank { "queued" }
+        val rawState =
+            json.optStringAny("download_state", "status", "state").ifBlank { "queued" }
+        // Unchained only lists torrents whose status is "downloaded" or "ready", and it
+        // expects progress as a 0..100 percentage. TorBox sends download_state plus a
+        // 0..1 ratio, so an unmapped torrent renders as "queued" at 1% and never shows.
+        val status = torboxStatus(rawState)
         val size = json.optLongAny("size", "original_bytes", "bytes")
         val progress =
-            json.optDoubleAny("progress")?.toFloat()
-                ?: if (
-                    status.equals("cached", true) || status.equals("completed", true)
-                ) 100f else 0f
+            json.optDoubleAny("progress")
+                ?.let { raw ->
+                    (if (raw <= 1.0) raw * 100.0 else raw).coerceIn(0.0, 100.0).toFloat()
+                }
+                ?: if (status == "downloaded") 100f else 0f
         val files = parseFiles(json.optJSONArray("files"), id)
         val links = files.map { torboxReference(id, it.id) }
         val filename =
@@ -240,7 +246,7 @@ constructor(
             filename = filename,
             originalFilename = json.optStringAny("original_filename", "name").ifBlank { null },
             hash = json.optStringAny("hash", "infohash"),
-            bytes = json.optLongAny("downloaded", "downloaded_bytes", "bytes"),
+            bytes = json.optLongAny("total_downloaded", "downloaded", "downloaded_bytes", "bytes"),
             originalBytes = size.takeIf { it > 0 },
             host = TORBOX_HOST,
             split = 0,
@@ -250,10 +256,27 @@ constructor(
             files = files,
             links = links,
             ended = json.optStringAny("ended", "completed_at", "completedAt").ifBlank { null },
-            speed = json.optIntOrNull("speed"),
-            seeders = json.optIntOrNull("seeders"),
+            speed = json.optIntOrNull("download_speed") ?: json.optIntOrNull("speed"),
+            seeders = json.optIntOrNull("seeds") ?: json.optIntOrNull("seeders"),
         )
     }
+
+    /** Maps TorBox download_state onto the statuses Unchained's UI understands. */
+    private fun torboxStatus(state: String): String =
+        when (state.lowercase()) {
+            "cached",
+            "completed",
+            "download finished" -> "downloaded"
+            "downloading",
+            "incomplete",
+            "uploading",
+            "metadl",
+            "checking" -> "downloading"
+            "expired",
+            "reported missing",
+            "error" -> "error"
+            else -> "queued"
+        }
 
     private fun parseFiles(array: JSONArray?, torrentId: Int): List<InnerTorrentFile> {
         if (array == null) return emptyList()
