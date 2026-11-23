@@ -1042,8 +1042,17 @@ constructor(
     }
 
     fun enqueueDownload(sourceUrl: String, fileName: String) {
-        // todo: folder should be nullable for the system download manager
-        messageLiveData.postValue(Event(MainActivityMessage.DownloadEnqueued(sourceUrl, fileName)))
+        // Nothing in Android can fetch a torbox:// reference, so mint the short-lived CDN url
+        // before handing the job on. Without this the download button reported "not started".
+        if (!sourceUrl.startsWith(TorboxClient.TORBOX_SCHEME)) {
+            messageLiveData.postValue(Event(MainActivityMessage.DownloadEnqueued(sourceUrl, fileName)))
+            return
+        }
+
+        viewModelScope.launch {
+            val resolved = torboxClient.resolveDownloadReference(sourceUrl) ?: sourceUrl
+            messageLiveData.postValue(Event(MainActivityMessage.DownloadEnqueued(resolved, fileName)))
+        }
     }
 
     fun enqueueDownloads(downloads: List<DownloadItem>) {
