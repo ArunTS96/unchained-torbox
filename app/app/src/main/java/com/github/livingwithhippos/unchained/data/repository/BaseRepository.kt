@@ -114,8 +114,11 @@ open class BaseRepository(private val protoStore: ProtoStore) {
      */
     suspend fun getToken(): String {
         val token = protoStore.getCredentials().accessToken
-        if (token.isBlank() || token.length < 5)
-            throw IllegalArgumentException("Loaded token was empty or wrong: $token")
+        // This build talks to TorBox only, so no Put.io credential is ever stored. Throwing here
+        // killed the app on anything that still reached a Put.io endpoint (tapping a torrent
+        // crashed it, because the folder screen unrestricts links first). Return the empty token
+        // instead: those calls fail as unauthorised and their Result wrappers already handle it.
+        if (token.isBlank() || token.length < 5) return token
 
         return token
     }

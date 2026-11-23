@@ -15,6 +15,7 @@ import androidx.paging.liveData
 import com.github.livingwithhippos.unchained.data.model.DownloadItem
 import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.repository.DownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.TorrentsRepository
 import com.github.livingwithhippos.unchained.data.repository.UnrestrictRepository
@@ -89,6 +90,14 @@ constructor(
      */
     fun unrestrictTorrent(torrent: TorrentItem) {
         viewModelScope.launch {
+            // TorBox links are resolved into a CDN url at download time, so there is nothing to
+            // unrestrict. Build the DownloadItems from the torrent's own file list instead; the
+            // Put.io path below would have called for a credential this build never stores.
+            if (torrent.host == TorboxClient.TORBOX_HOST) {
+                downloadItemLiveData.postEvent(torrentsRepository.getDownloadItems(torrent))
+                return@launch
+            }
+
             val items = unrestrictRepository.getUnrestrictedLinkList(torrent.links)
             val values =
                 items.filterIsInstance<EitherResult.Success<DownloadItem>>().map { it.success }
