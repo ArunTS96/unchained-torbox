@@ -90,10 +90,35 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
             object : MenuProvider {
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                     menuInflater.inflate(R.menu.download_details_bar, menu)
-                }
+                    }
 
-                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                    override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
                     return when (menuItem.itemId) {
+                        R.id.copy_link -> {
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                val link = viewModel.shareableLink(args.details.download)
+                                copyToClipboard("TorBox download link", link)
+                                context?.showToast(R.string.link_copied)
+                            }
+                            true
+                        }
+
+                        R.id.share_link -> {
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                val link = viewModel.shareableLink(args.details.download)
+                                val shareIntent = Intent(Intent.ACTION_SEND)
+                                shareIntent.type = "text/plain"
+                                shareIntent.putExtra(Intent.EXTRA_TEXT, link)
+                                startActivity(
+                                    Intent.createChooser(
+                                        shareIntent,
+                                        getString(R.string.share_with),
+                                    )
+                                )
+                            }
+                            true
+                        }
+
                         R.id.delete -> {
                             val dialog = DeleteDialogFragment()
                             val bundle = Bundle()
@@ -130,15 +155,21 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
             binding.tvType.visibility = View.VISIBLE
         }
         binding.fabShareLink.setOnClickListener {
-            val shareIntent = Intent(Intent.ACTION_SEND)
-            shareIntent.type = "text/plain"
-            shareIntent.putExtra(Intent.EXTRA_TEXT, args.details.download)
-            startActivity(Intent.createChooser(shareIntent, getString(R.string.share_with)))
+            viewLifecycleOwner.lifecycleScope.launch {
+                val link = viewModel.shareableLink(args.details.download)
+                val shareIntent = Intent(Intent.ACTION_SEND)
+                shareIntent.type = "text/plain"
+                shareIntent.putExtra(Intent.EXTRA_TEXT, link)
+                startActivity(Intent.createChooser(shareIntent, getString(R.string.share_with)))
+            }
         }
         binding.fabOpenLink.setOnClickListener { onOpenClick(args.details.download) }
         binding.fabCopyLink.setOnClickListener {
-            copyToClipboard("Real-Debrid Download Link", args.details.download)
-            context?.showToast(R.string.link_copied)
+            viewLifecycleOwner.lifecycleScope.launch {
+                val link = viewModel.shareableLink(args.details.download)
+                copyToClipboard("TorBox download link", link)
+                context?.showToast(R.string.link_copied)
+            }
         }
         binding.fabDownloadLink.setOnClickListener {
             onDownloadClick(args.details.download, args.details.filename)

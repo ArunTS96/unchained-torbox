@@ -35,7 +35,17 @@ constructor(
     private val kodiRepository: KodiRepository,
     private val remoteServiceRepository: VLCRemoteRepository,
     private val serviceRepository: ServiceRepository,
+    private val torboxClient: com.github.livingwithhippos.unchained.data.remote.TorboxClient,
 ) : ViewModel() {
+
+    /**
+     * A link the user can paste or share. TorBox hands out a torbox:// reference, so mint the CDN url
+     * first; anything else is passed through untouched.
+     */
+    suspend fun shareableLink(reference: String): String =
+        if (reference.startsWith(com.github.livingwithhippos.unchained.data.remote.TorboxClient.TORBOX_SCHEME))
+            torboxClient.resolveDownloadReference(reference) ?: reference
+        else reference
 
     val streamLiveData = MutableLiveData<Stream?>()
     val deletedDownloadLiveData = MutableLiveData<Event<Int>>()

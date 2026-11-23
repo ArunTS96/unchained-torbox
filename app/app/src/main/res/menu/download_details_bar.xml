@@ -3,6 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     >
     <item
+        android:id="@+id/copy_link"
+        android:title="Copy download link"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/share_link"
+        android:title="Share download link"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/delete"
         android:contentDescription="@string/content_description_delete_download_item"
         android:icon="@drawable/icon_delete"
