@@ -246,7 +246,9 @@ constructor(
             filename = filename,
             originalFilename = json.optStringAny("original_filename", "name").ifBlank { null },
             hash = json.optStringAny("hash", "infohash"),
-            bytes = json.optLongAny("total_downloaded", "downloaded", "downloaded_bytes", "bytes"),
+            bytes =
+                json.optLongAny("total_downloaded", "downloaded", "downloaded_bytes", "bytes")
+                    .takeIf { it > 0 } ?: size,
             originalBytes = size.takeIf { it > 0 },
             host = TORBOX_HOST,
             split = 0,
