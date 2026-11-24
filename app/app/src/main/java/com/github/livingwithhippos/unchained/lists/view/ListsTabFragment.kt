@@ -136,13 +136,8 @@ class ListsTabFragment : UnchainedFragment() {
                             true
                         }
 
-                        R.id.delete_all_downloads -> {
-                            showDeleteAllDialog(DOWNLOADS_TAB)
-                            true
-                        }
-
                         R.id.delete_all_torrents -> {
-                            showDeleteAllDialog(TORRENTS_TAB)
+                            showDeleteAllDialog()
                             true
                         }
 
@@ -258,7 +253,7 @@ class ListsTabFragment : UnchainedFragment() {
                                                 linkList = null,
                                             )
                                     findNavController().navigate(action)
-                                } else viewModel.unrestrictTorrent(event.item)
+                                } else context?.showToast(R.string.error)
                             }
                             // open the torrent details fragment
                             else -> {
@@ -301,18 +296,6 @@ class ListsTabFragment : UnchainedFragment() {
                             }
                             if (controller.currentDestination?.id == R.id.list_tabs_dest)
                                 controller.navigate(action)
-                        }
-                    }
-
-                    is ListEvent.SetTab -> {
-                        if (_binding == null) return@EventObserver
-
-                        if (event.tab == DOWNLOADS_TAB) {
-                            if (binding.listPager.currentItem == TORRENTS_TAB)
-                                binding.listPager.currentItem = DOWNLOADS_TAB
-                        } else {
-                            if (viewModel.getSelectedTab() == DOWNLOADS_TAB)
-                                binding.listPager.currentItem = TORRENTS_TAB
                         }
                     }
 
@@ -374,31 +357,22 @@ class ListsTabFragment : UnchainedFragment() {
 
         viewPager.adapter = ListsAdapter(this)
 
-        TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-                if (position == DOWNLOADS_TAB) {
-                    tab.text = getString(R.string.downloads)
-                    tab.icon = requireContext().getThemedDrawable(R.drawable.icon_cloud_done)
-                } else {
-                    tab.text = getString(R.string.torrents)
-                    tab.icon = requireContext().getThemedDrawable(R.drawable.icon_torrent_logo)
-                }
+        TabLayoutMediator(tabLayout, viewPager) { tab, _ ->
+                tab.text = getString(R.string.torrents)
+                tab.icon = requireContext().getThemedDrawable(R.drawable.icon_torrent_logo)
             }
             .attach()
 
         super.onViewCreated(view, savedInstanceState)
     }
 
-    private fun showDeleteAllDialog(selectedTab: Int) {
+    private fun showDeleteAllDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(R.string.delete_all))
-            .setMessage(
-                if (selectedTab == DOWNLOADS_TAB) getString(R.string.delete_all_downloads_message)
-                else getString(R.string.delete_all_torrents_message)
-            )
+            .setMessage(getString(R.string.delete_all_torrents_message))
             .setNegativeButton(getString(R.string.decline)) { _, _ -> }
             .setPositiveButton(getString(R.string.accept)) { _, _ ->
-                if (selectedTab == DOWNLOADS_TAB) viewModel.deleteAllDownloads()
-                else viewModel.deleteAllTorrents()
+                viewModel.deleteAllTorrents()
             }
             .show()
     }
@@ -406,260 +380,9 @@ class ListsTabFragment : UnchainedFragment() {
 
 class ListsAdapter(fragment: Fragment) : FragmentStateAdapter(fragment) {
 
-    override fun getItemCount(): Int = 2
+    override fun getItemCount(): Int = 1
 
-    override fun createFragment(position: Int): Fragment {
-        return if (position == DOWNLOADS_TAB) {
-            DownloadsListFragment()
-        } else {
-            TorrentsListFragment()
-        }
-    }
-}
-
-@AndroidEntryPoint
-class DownloadsListFragment : UnchainedFragment(), DownloadListListener {
-
-    private val viewModel: ListTabsViewModel by activityViewModels()
-
-    private var _binding: FragmentDownloadsListBinding? = null
-    private val binding
-        get() = _binding!!
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?,
-    ): View {
-        _binding = FragmentDownloadsListBinding.inflate(inflater, container, false)
-
-        binding.cbSelectAll.text = "0"
-
-        val downloadAdapter = DownloadListPagingAdapter(this)
-        binding.rvDownloadList.adapter = downloadAdapter
-
-        // download list selection  tracker
-        val downloadTracker: SelectionTracker<DownloadItem> =
-            SelectionTracker.Builder(
-                    "downloadListSelection",
-                    binding.rvDownloadList,
-                    DownloadKeyProvider(downloadAdapter),
-                    DownloadDetailsLookup(binding.rvDownloadList),
-                    StorageStrategy.createParcelableStorage(DownloadItem::class.java),
-                )
-                .withSelectionPredicate(SelectionPredicates.createSelectAnything())
-                .build()
-
-        downloadAdapter.tracker = downloadTracker
-
-        downloadTracker.addObserver(
-            object : SelectionTracker.SelectionObserver<DownloadItem>() {
-                override fun onSelectionChanged() {
-                    super.onSelectionChanged()
-                    if (_binding == null) return
-                    binding.cbSelectAll.text = downloadTracker.selection.size().toString()
-                }
-            }
-        )
-
-        // listener for selection buttons
-        binding.bDeleteSelected.setOnClickListener {
-            if (downloadTracker.selection.toList().isNotEmpty())
-                viewModel.deleteDownloads(downloadTracker.selection.toList())
-            else context?.showToast(R.string.select_one_item)
-        }
-        binding.bDownloadSelected.setOnClickListener {
-            val downloads: List<DownloadItem> = downloadTracker.selection.toList()
-            if (downloads.isNotEmpty()) {
-                if (downloads.size == 1) {
-                    activityViewModel.enqueueDownload(
-                        downloads.first().download,
-                        downloads.first().filename,
-                    )
-                } else {
-                    activityViewModel.enqueueDownloads(downloads)
-                }
-            } else context?.showToast(R.string.select_one_item)
-        }
-        binding.bShareSelected.setOnClickListener {
-            if (downloadTracker.selection.toList().isNotEmpty()) {
-                val shareIntent = Intent(Intent.ACTION_SEND)
-                shareIntent.type = "text/plain"
-                val shareLinks = downloadTracker.selection.joinToString("\n") { it.download }
-                shareIntent.putExtra(Intent.EXTRA_TEXT, shareLinks)
-                startActivity(Intent.createChooser(shareIntent, getString(R.string.share_with)))
-            } else context?.showToast(R.string.select_one_item)
-        }
-        binding.bAddNew?.setOnClickListener {
-            // only in landscape view
-            viewModel.postEventNotice(ListEvent.NewDownload)
-        }
-        binding.bRefresh?.setOnClickListener {
-            // only in landscape view
-            if (!binding.srLayout.isRefreshing) {
-                binding.srLayout.isRefreshing = true
-                downloadAdapter.refresh()
-            }
-        }
-
-        binding.cbSelectAll.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                downloadTracker.setItemsSelected(downloadAdapter.snapshot().items, true)
-            } else {
-                downloadTracker.clearSelection()
-            }
-        }
-
-        binding.srLayout.setOnRefreshListener {
-            if (_binding == null) return@setOnRefreshListener
-            downloadAdapter.refresh()
-        }
-
-        context?.let {
-            // theme the swipe refresh circle and arrow
-            val primaryColor = getThemeColor(it, android.R.attr.colorPrimary)
-            val surfaceColor = getThemeColor(it, com.google.android.material.R.attr.colorSurface)
-            binding.srLayout.setColorSchemeColors(primaryColor)
-            binding.srLayout.setProgressBackgroundColorSchemeColor(surfaceColor)
-        }
-
-        // observers created to be easily added and removed. Pass the retrieved list to the adapter
-        // and
-        // removes the loading icon from the swipe layout
-        val downloadObserver =
-            Observer<PagingData<DownloadItem>> {
-                if (_binding == null) return@Observer
-                viewLifecycleOwner.lifecycleScope.launch {
-                    downloadAdapter.submitData(it)
-                    // stop the refresh animation if playing
-                    if (binding.srLayout.isRefreshing) {
-                        binding.srLayout.isRefreshing = false
-                        // scroll to top if we were refreshing
-                        lifecycleScope.launch {
-                            binding.rvDownloadList.delayedScrolling(requireContext())
-                        }
-                    }
-                    // delay for notifying the list that the items have changed, otherwise stuff
-                    // like the
-                    // status and the progress are not updated until you scroll away and back there
-                    delay(300.milliseconds)
-                    downloadAdapter.notifyDataSetChanged()
-                }
-            }
-
-        // checks the authentication state. Needed to avoid automatic API calls before the
-        // authentication process is finished
-        activityViewModel.fsmAuthenticationState.observe(viewLifecycleOwner) {
-            when (it?.peekContent()) {
-                FSMAuthenticationState.AuthenticatedOpenToken,
-                FSMAuthenticationState.AuthenticatedPrivateToken -> {
-                    // register observers if not already registered
-                    if (!viewModel.downloadsLiveData.hasActiveObservers())
-                        viewModel.downloadsLiveData.observe(viewLifecycleOwner, downloadObserver)
-                }
-
-                else -> {}
-            }
-        }
-
-        viewModel.downloadItemLiveData.observe(
-            viewLifecycleOwner,
-            EventObserver { links ->
-                if (_binding == null) return@EventObserver
-                // todo: if it gets emptied null/empty should be processed too
-                if (links.isNotEmpty()) {
-                    // simulate list refresh
-                    binding.srLayout.isRefreshing = true
-                    // refresh items, when returned they'll stop the animation
-                    downloadAdapter.refresh()
-
-                    viewModel.postEventNotice(ListEvent.SetTab(DOWNLOADS_TAB))
-                }
-            },
-        )
-
-        activityViewModel.listStateLiveData.observe(
-            viewLifecycleOwner,
-            EventObserver {
-                if (_binding == null) return@EventObserver
-                when (it) {
-                    ListState.UpdateDownload -> {
-                        lifecycleScope.launch {
-                            delay(300.milliseconds)
-                            downloadAdapter.refresh()
-                            lifecycleScope.launch {
-                                binding.rvDownloadList.delayedScrolling(requireContext())
-                            }
-                        }
-                    }
-
-                    else -> {}
-                }
-            },
-        )
-
-        viewModel.deletedDownloadLiveData.observe(
-            viewLifecycleOwner,
-            EventObserver {
-                when (it) {
-                    DOWNLOAD_NOT_DELETED -> {}
-                    DOWNLOAD_DELETED -> {
-                        context?.showToast(R.string.download_removed)
-                        downloadAdapter.refresh()
-                    }
-
-                    DOWNLOADS_DELETED -> {
-                        context?.showToast(R.string.downloads_removed)
-                        downloadAdapter.refresh()
-                    }
-
-                    DOWNLOADS_DELETED_ALL -> {
-                        context?.showToast(R.string.downloads_removed)
-                        lifecycleScope.launch {
-                            // if we don't refresh the cached copy of the last result will be
-                            // restored on the
-                            // first list redraw
-                            downloadAdapter.refresh()
-                            downloadAdapter.submitData(PagingData.empty())
-                        }
-                    }
-
-                    0 -> {
-                        context?.showToast(R.string.removing_downloads)
-                    }
-
-                    else -> {
-                        downloadAdapter.refresh()
-                    }
-                }
-            },
-        )
-
-        // scroll the list to the top when the parent fragment fab is clicked on this tab
-        viewModel.scrollToTopLiveData.observe(viewLifecycleOwner) { event ->
-            if (event?.peekContent() == DOWNLOADS_TAB) {
-                event.getContentIfNotHandled()?.let {
-                    if (_binding != null) binding.rvDownloadList.layoutManager?.scrollToPosition(0)
-                }
-            }
-        }
-
-        // starts the Transformations.switchMap(queryLiveData) which otherwise won't trigger the
-        // Paging
-        // request
-        viewModel.setListFilter("")
-
-        return binding.root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-    override fun onClick(item: DownloadItem) {
-        viewModel.postEventNotice(ListEvent.DownloadItemClick(item))
-    }
+    override fun createFragment(position: Int): Fragment = TorrentsListFragment()
 }
 
 @AndroidEntryPoint
@@ -723,9 +446,21 @@ class TorrentsListFragment : UnchainedFragment(), TorrentListListener {
             else context?.showToast(R.string.select_one_item)
         }
         binding.bDownloadSelected.setOnClickListener {
-            if (torrentTracker.selection.toList().isNotEmpty()) {
-                viewModel.downloadItems(torrentTracker.selection.toList())
-            } else context?.showToast(R.string.select_one_item)
+            // A TorBox torrent's files live in the folder screen; enqueueing here would only resolve
+            // a torbox:// reference and needs the key, so hand the user the real file list instead.
+            if (torrentTracker.selection.size() != 1) {
+                context?.showToast(R.string.select_one_item)
+                return@setOnClickListener
+            }
+            val torrent: TorrentItem = torrentTracker.selection.toList().first()
+            findNavController()
+                .navigate(
+                    ListsTabFragmentDirections.actionListTabsDestToFolderListFragment2(
+                        folder = null,
+                        torrent = torrent,
+                        linkList = null,
+                    )
+                )
         }
         binding.bDetailsSelected.setOnClickListener {
             if (torrentTracker.selection.size() != 1) {
@@ -857,10 +592,9 @@ class TorrentsListFragment : UnchainedFragment(), TorrentListListener {
 
         // scroll the list to the top when the parent fragment fab is clicked on this tab
         viewModel.scrollToTopLiveData.observe(viewLifecycleOwner) { event ->
-            if (event?.peekContent() == TORRENTS_TAB) {
-                event.getContentIfNotHandled()?.let {
-                    if (_binding != null) binding.rvTorrentList.layoutManager?.scrollToPosition(0)
-                }
+            // a single list page now, so any scroll-to-top request belongs to it
+            event?.getContentIfNotHandled()?.let {
+                if (_binding != null) binding.rvTorrentList.layoutManager?.scrollToPosition(0)
             }
         }
 
@@ -899,7 +633,7 @@ class TorrentsListFragment : UnchainedFragment(), TorrentListListener {
                         Timber.e(
                             "Correct tab was not ready within 2 seconds after clicking torrent $item"
                         )
-                } else viewModel.unrestrictTorrent(item)
+                } else context?.showToast(R.string.error)
             } else if (beforeSelectionStatusList.contains(item.status)) {
                 // go to torrent processing since it is still loading
                 val action =

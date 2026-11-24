@@ -156,7 +156,14 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
         }
         binding.fabShareLink.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
-                val link = viewModel.shareableLink(args.details.download)
+                // Resolving the torbox:// reference needs the API key; a cleared key must not
+                // take the app down from an unguarded coroutine.
+                val link =
+                    runCatching { viewModel.shareableLink(args.details.download) }
+                        .getOrElse {
+                            context?.showToast(R.string.error)
+                            return@launch
+                        }
                 val shareIntent = Intent(Intent.ACTION_SEND)
                 shareIntent.type = "text/plain"
                 shareIntent.putExtra(Intent.EXTRA_TEXT, link)
@@ -166,7 +173,12 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
         binding.fabOpenLink.setOnClickListener { onOpenClick(args.details.download) }
         binding.fabCopyLink.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
-                val link = viewModel.shareableLink(args.details.download)
+                val link =
+                    runCatching { viewModel.shareableLink(args.details.download) }
+                        .getOrElse {
+                            context?.showToast(R.string.error)
+                            return@launch
+                        }
                 copyToClipboard("TorBox download link", link)
                 context?.showToast(R.string.link_copied)
             }
@@ -250,9 +262,10 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
         }
 
         if (args.details.download.startsWith("torbox://")) {
-            binding.llFabShare.visibility = View.GONE
+            // Copy and share stay available: their handlers resolve the internal torbox:// reference
+            // to a real download URL (TorboxClient.resolveDownloadReference) before copying/sharing.
+            // Everything else here needs a directly playable URL, so it stays hidden.
             binding.llFabOpen.visibility = View.GONE
-            binding.llFabCopy.visibility = View.GONE
             binding.llFabSendToPlayer.visibility = View.GONE
             binding.llFabPickStreaming.visibility = View.GONE
             binding.llFabLoadStreams.visibility = View.GONE

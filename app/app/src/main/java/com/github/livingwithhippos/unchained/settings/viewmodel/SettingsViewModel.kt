@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.data.local.ProtoStore
+import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
 import com.github.livingwithhippos.unchained.data.repository.HostsRepository
 import com.github.livingwithhippos.unchained.data.repository.KodiRepository
 import com.github.livingwithhippos.unchained.data.repository.PluginRepository
@@ -30,6 +31,7 @@ constructor(
     private val kodiRepository: KodiRepository,
     private val protoStore: ProtoStore,
     private val preferences: SharedPreferences,
+    private val torboxKeyStore: TorboxKeyStore,
 ) : ViewModel() {
 
     val kodiLiveData = MutableLiveData<Event<Boolean>>()
@@ -65,11 +67,17 @@ constructor(
 
     fun userLogout() {
         viewModelScope.launch {
+            val hadTorboxKey = !torboxKeyStore.read().isNullOrBlank()
             val credentials = protoStore.getCredentials()
-            if (credentials.accessToken.isBlank() && credentials.clientId.isBlank()) {
+            val hadLegacyCredentials =
+                credentials.accessToken.isNotBlank() || credentials.clientId.isNotBlank()
+            if (!hadTorboxKey && !hadLegacyCredentials) {
                 eventLiveData.postEvent(SettingEvent.LogoutNoCredentials)
             } else {
-                protoStore.deleteCredentials()
+                // TorBox keeps the API key in the Keystore-backed store, not in ProtoStore, so
+                // clearing only the legacy credentials left the account still signed in.
+                if (hadLegacyCredentials) protoStore.deleteCredentials()
+                if (hadTorboxKey) torboxKeyStore.clear()
                 eventLiveData.postEvent(SettingEvent.Logout)
             }
         }

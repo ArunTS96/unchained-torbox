@@ -19,7 +19,6 @@ import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.repository.DownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.TorrentsRepository
 import com.github.livingwithhippos.unchained.data.repository.UnrestrictRepository
-import com.github.livingwithhippos.unchained.lists.model.DownloadPagingSource
 import com.github.livingwithhippos.unchained.lists.model.TorrentPagingSource
 import com.github.livingwithhippos.unchained.utilities.DOWNLOADS_TAB
 import com.github.livingwithhippos.unchained.utilities.EitherResult
@@ -48,18 +47,6 @@ constructor(
     // stores the last query value
     private val queryLiveData = MutableLiveData<String>()
 
-    // items are filtered returning only if their names contain the query
-    val downloadsLiveData: LiveData<PagingData<DownloadItem>> =
-        queryLiveData.switchMap { query: String ->
-            val size = getPagingSize()
-            val initialSize = max(size, INITIAL_LOAD)
-            Pager(PagingConfig(pageSize = size, initialLoadSize = initialSize)) {
-                    DownloadPagingSource(downloadRepository, query)
-                }
-                .liveData
-                .cachedIn(viewModelScope)
-        }
-
     val torrentsLiveData: LiveData<PagingData<TorrentItem>> =
         queryLiveData.switchMap { query: String ->
             val size = getPagingSize()
@@ -73,43 +60,12 @@ constructor(
 
     val errorsLiveData = MutableLiveData<Event<List<UnchainedNetworkException>>>()
 
-    val downloadItemLiveData = MutableLiveData<Event<List<DownloadItem>>>()
-
     val deletedTorrentLiveData = MutableLiveData<Event<Int>>()
-    val deletedDownloadLiveData = MutableLiveData<Event<Int>>()
 
     val eventLiveData = MutableLiveData<Event<ListEvent>>()
 
     // tab index of the list to be scrolled to the top, see ListsTabFragment fabScrollToTop
     val scrollToTopLiveData = MutableLiveData<Event<Int>>()
-
-    /**
-     * Un restrict a torrent and move it to the download section
-     *
-     * @param torrent
-     */
-    fun unrestrictTorrent(torrent: TorrentItem) {
-        viewModelScope.launch {
-            // TorBox links are resolved into a CDN url at download time, so there is nothing to
-            // unrestrict. Build the DownloadItems from the torrent's own file list instead; the
-            // Put.io path below would have called for a credential this build never stores.
-            if (torrent.host == TorboxClient.TORBOX_HOST) {
-                downloadItemLiveData.postEvent(torrentsRepository.getDownloadItems(torrent))
-                return@launch
-            }
-
-            val items = unrestrictRepository.getUnrestrictedLinkList(torrent.links)
-            val values =
-                items.filterIsInstance<EitherResult.Success<DownloadItem>>().map { it.success }
-            val errors =
-                items.filterIsInstance<EitherResult.Failure<UnchainedNetworkException>>().map {
-                    it.failure
-                }
-
-            downloadItemLiveData.postEvent(values)
-            if (errors.isNotEmpty()) errorsLiveData.postEvent(errors)
-        }
-    }
 
     private fun getPagingSize(): Int {
         return min(preferences.getInt("paging_size", 50), MAX_PAGE_SIZE)
@@ -129,30 +85,6 @@ constructor(
         if (queryLiveData.value != query) queryLiveData.postValue(query?.trim() ?: "")
     }
 
-    fun deleteAllDownloads() {
-        viewModelScope.launch {
-            deletedDownloadLiveData.postEvent(0)
-            var page = 1
-            val completeDownloadList = mutableListOf<DownloadItem>()
-            do {
-                val downloads = downloadRepository.getDownloads(0, page++, 50)
-                completeDownloadList.addAll(downloads)
-            } while (downloads.size >= 50)
-
-            // post a message every 10% of the deletion progress if there are more than 10 items
-            val progressIndicator: Int =
-                if (completeDownloadList.size / 10 < 15) 15 else completeDownloadList.size / 10
-
-            completeDownloadList.forEachIndexed { index, item ->
-                downloadRepository.deleteDownload(item.id)
-                if ((index + 1) % progressIndicator == 0)
-                    deletedDownloadLiveData.postEvent(index + 1)
-            }
-
-            deletedDownloadLiveData.postEvent(DOWNLOADS_DELETED_ALL)
-        }
-    }
-
     fun deleteAllTorrents() {
         viewModelScope.launch {
             do {
@@ -169,20 +101,6 @@ constructor(
             torrents.forEach { torrentsRepository.deleteTorrent(it.id) }
             if (torrents.size > 1) deletedTorrentLiveData.postEvent(TORRENTS_DELETED)
             else deletedTorrentLiveData.postEvent(TORRENT_DELETED)
-        }
-    }
-
-    fun downloadItems(torrents: List<TorrentItem>) {
-        torrents
-            .filter { it.status == "downloaded" || it.status == "ready" }
-            .forEach { unrestrictTorrent(it) }
-    }
-
-    fun deleteDownloads(downloads: List<DownloadItem>) {
-        viewModelScope.launch {
-            downloads.forEach { downloadRepository.deleteDownload(it.id) }
-            if (downloads.size > 1) deletedDownloadLiveData.postEvent(DOWNLOADS_DELETED)
-            else deletedDownloadLiveData.postEvent(DOWNLOAD_DELETED)
         }
     }
 
@@ -218,7 +136,6 @@ sealed class ListEvent {
 
     data class OpenTorrent(val item: TorrentItem) : ListEvent()
 
-    data class SetTab(val tab: Int) : ListEvent()
 
     data object NewDownload : ListEvent()
 }
