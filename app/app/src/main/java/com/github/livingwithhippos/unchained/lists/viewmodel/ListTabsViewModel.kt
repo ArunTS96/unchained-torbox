@@ -45,7 +45,10 @@ constructor(
 ) : ViewModel() {
 
     // stores the last query value
-    private val queryLiveData = MutableLiveData<String>()
+    // Seeded with a blank query: switchMap only emits once this has a value, and nothing calls
+    // setListFilter until the user touches the search box, so an unseeded LiveData left the
+    // list empty on every cold start.
+    private val queryLiveData = MutableLiveData<String>("")
 
     val torrentsLiveData: LiveData<PagingData<TorrentItem>> =
         queryLiveData.switchMap { query: String ->

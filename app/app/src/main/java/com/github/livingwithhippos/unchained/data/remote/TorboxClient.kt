@@ -1,6 +1,7 @@
 package com.github.livingwithhippos.unchained.data.remote
 
 import android.net.Uri
+import com.github.livingwithhippos.unchained.BuildConfig
 import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
 import com.github.livingwithhippos.unchained.data.model.DownloadItem
 import com.github.livingwithhippos.unchained.data.model.InnerTorrentFile
@@ -46,15 +47,26 @@ constructor(
 
     suspend fun listTorrents(): List<TorrentItem> =
         withContext(Dispatchers.IO) {
-            runCatching {
-            authenticatedGet("torrents/mylist") {
-                addQueryParameter("limit", "1000")
-                addQueryParameter("offset", "0")
-            }.use { response ->
-                if (!response.isSuccessful) emptyList()
-                else parseTorrentCollection(response.body?.string().orEmpty())
+            try {
+                authenticatedGet("torrents/mylist") {
+                        addQueryParameter("limit", "1000")
+                        addQueryParameter("offset", "0")
+                    }
+                    .use { response ->
+                        val body = response.body?.string().orEmpty()
+                        if (BuildConfig.DEBUG)
+                            android.util.Log.d(TORBOX_LOG, "mylist ${response.code} bytes=${body.length}")
+                        if (!response.isSuccessful) emptyList()
+                        else
+                            parseTorrentCollection(body).also {
+                                if (BuildConfig.DEBUG)
+                                    android.util.Log.d(TORBOX_LOG, "parsed torrents=${it.size}")
+                            }
+                    }
+            } catch (t: Throwable) {
+                if (BuildConfig.DEBUG) android.util.Log.e(TORBOX_LOG, "mylist failed", t)
+                emptyList()
             }
-            }.getOrDefault(emptyList())
         }
 
     suspend fun getTorrent(id: String): TorrentItem? =
@@ -367,6 +379,7 @@ constructor(
         }
 
     companion object {
+        private const val TORBOX_LOG = "TorboxClient"
         const val TORBOX_SCHEME = "torbox"
         const val DOWNLOAD_HOST = "download"
         const val TORBOX_HOST = "TorBox"
