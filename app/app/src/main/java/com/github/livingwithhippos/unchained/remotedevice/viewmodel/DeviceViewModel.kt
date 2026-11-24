@@ -37,6 +37,34 @@ constructor(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 when (type) {
+                    is RemoteServiceType.TORZNAB -> {
+                        val url =
+                            buildString {
+                                append(address.trim().trimEnd('/'))
+                                append("?t=caps")
+                                if (!apiToken.isNullOrBlank()) append("&apikey=$apiToken")
+                            }
+                        try {
+                            client.newCall(okhttp3.Request.Builder().url(url).build())
+                                .execute()
+                                .use { response ->
+                                    if (response.isSuccessful)
+                                        deviceLiveData.postValue(DeviceEvent.ServiceWorking)
+                                    else
+                                        deviceLiveData.postValue(
+                                            DeviceEvent.ServiceNotWorking(
+                                                ServiceErrorType.ResponseError
+                                            )
+                                        )
+                                }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error testing the torznab service $url")
+                            deviceLiveData.postValue(
+                                DeviceEvent.ServiceNotWorking(ServiceErrorType.Generic)
+                            )
+                        }
+                    }
+
                     is RemoteServiceType.PROWLARR -> {
                         val url: StringBuilder = StringBuilder()
                         if (

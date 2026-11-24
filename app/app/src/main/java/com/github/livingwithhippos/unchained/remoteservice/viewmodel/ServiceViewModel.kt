@@ -41,6 +41,34 @@ constructor(
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 when (type) {
+                    is RemoteServiceType.TORZNAB -> {
+                        // a flat torznab endpoint: the address is already the API root
+                        val url =
+                            buildString {
+                                append(address.trim().trimEnd('/'))
+                                append("?t=caps")
+                                if (!apiToken.isNullOrBlank()) append("&apikey=$apiToken")
+                            }
+                        val request = okhttp3.Request.Builder().url(url).build()
+                        try {
+                            client.newCall(request).execute().use { response ->
+                                if (response.isSuccessful)
+                                    serviceLiveData.postValue(ServiceEvent.ServiceWorking)
+                                else
+                                    serviceLiveData.postValue(
+                                        ServiceEvent.ServiceNotWorking(
+                                            ServiceErrorType.ResponseError
+                                        )
+                                    )
+                            }
+                        } catch (e: Exception) {
+                            Timber.e(e, "Error testing the torznab service $url")
+                            serviceLiveData.postValue(
+                                ServiceEvent.ServiceNotWorking(ServiceErrorType.Generic)
+                            )
+                        }
+                    }
+
                     is RemoteServiceType.JACKETT -> {
                         val url: StringBuilder = StringBuilder()
                         // todo: check if ip and add http

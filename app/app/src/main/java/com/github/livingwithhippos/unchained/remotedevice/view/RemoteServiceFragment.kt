@@ -134,7 +134,7 @@ class RemoteServiceFragment : Fragment() {
                         )
                     viewModel.updateService(remoteService)
                 }
-                RemoteServiceType.PROWLARR -> {
+                RemoteServiceType.PROWLARR, RemoteServiceType.TORZNAB -> {
                     val remoteService =
                         RemoteService(
                             id = serviceId,
@@ -247,6 +247,10 @@ class RemoteServiceFragment : Fragment() {
                 RemoteServiceType.JACKETT
             }
 
+            getString(R.string.torznab) -> {
+                RemoteServiceType.TORZNAB
+            }
+
             getString(R.string.prowlarr) -> {
                 RemoteServiceType.PROWLARR
             }
@@ -284,7 +288,7 @@ class RemoteServiceFragment : Fragment() {
                 binding.tfApiToken.visibility = View.VISIBLE
             }
 
-            RemoteServiceType.PROWLARR -> {
+            RemoteServiceType.PROWLARR, RemoteServiceType.TORZNAB -> {
                 binding.switchDefault.isEnabled = false
                 binding.switchDefault.isChecked = false
                 binding.tfApiToken.visibility = View.VISIBLE

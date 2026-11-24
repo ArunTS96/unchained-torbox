@@ -14,6 +14,7 @@ import com.github.livingwithhippos.unchained.data.repository.DatabasePluginRepos
 import com.github.livingwithhippos.unchained.data.repository.JackettRepository
 import com.github.livingwithhippos.unchained.data.repository.PluginRepository
 import com.github.livingwithhippos.unchained.data.repository.ProwlarrRepository
+import com.github.livingwithhippos.unchained.data.repository.TorznabRepository
 import com.github.livingwithhippos.unchained.data.repository.ServiceRepository
 import com.github.livingwithhippos.unchained.folderlist.view.FolderListFragment
 import com.github.livingwithhippos.unchained.folderlist.viewmodel.FolderListViewModel
@@ -48,6 +49,7 @@ constructor(
     private val serviceRepository: ServiceRepository,
     private val jackettRepository: JackettRepository,
     private val prowlarrRepository: ProwlarrRepository,
+    private val torznabRepository: TorznabRepository,
     private val parser: Parser,
 ) : ViewModel() {
 
@@ -141,7 +143,11 @@ constructor(
             val services =
                 serviceRepository.getServicesTypes(
                     types =
-                        listOf(RemoteServiceType.JACKETT.value, RemoteServiceType.PROWLARR.value)
+                        listOf(
+                            RemoteServiceType.JACKETT.value,
+                            RemoteServiceType.PROWLARR.value,
+                            RemoteServiceType.TORZNAB.value,
+                        )
                 )
             pluginLiveData.postEvent(
                 PluginsAndServices(
@@ -254,7 +260,11 @@ constructor(
             val enabledServices =
                 serviceRepository.getEnabledServicesTypes(
                     types =
-                        listOf(RemoteServiceType.JACKETT.value, RemoteServiceType.PROWLARR.value)
+                        listOf(
+                            RemoteServiceType.JACKETT.value,
+                            RemoteServiceType.PROWLARR.value,
+                            RemoteServiceType.TORZNAB.value,
+                        )
                 )
 
             if (enabledPlugins.isEmpty() && enabledServices.isEmpty()) {
@@ -343,6 +353,23 @@ constructor(
                                             // not used yet
                                             Timber.d(
                                                 "Received non-results parser result from service search: $it"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            RemoteServiceType.TORZNAB.value -> {
+                                torznabRepository.performSearch(service, query = query).collect {
+                                    when (it) {
+                                        is ParserResult.Results -> {
+                                            results.addAll(it.values)
+                                            parsingLiveData.value = ParserResult.Results(results)
+                                            setSearchResults(results)
+                                        }
+
+                                        else -> {
+                                            Timber.d(
+                                                "Received non-results parser result from torznab search: $it"
                                             )
                                         }
                                     }

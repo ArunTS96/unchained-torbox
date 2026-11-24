@@ -783,4 +783,6 @@
     <string name="account_member_since_format">Member since %1$s</string>
     <string name="account_torrents_format">%1$d torrents downloaded</string>
     <string name="torrent_already_added">This torrent is already in your list</string>
+    <string name="torznab" translatable="false">Torznab</string>
+    <string name="torznab_dmm_hint">Debrid Media Manager: https://debridmediamanager.com/api/torznab — its API key comes with a DMM sponsorship</string>
 </resources>

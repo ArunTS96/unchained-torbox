@@ -97,6 +97,7 @@
         <item>@string/player_vlc</item>
         <item>@string/jackett</item>
         <item>@string/prowlarr</item>
+            <item>@string/torznab</item>
     </string-array>
     <string-array name="search_categories">
         <item>@string/category_all</item>
