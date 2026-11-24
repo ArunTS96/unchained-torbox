@@ -18,7 +18,7 @@
     <fragment
         android:id="@+id/list_tabs_dest"
         android:name="com.github.livingwithhippos.unchained.lists.view.ListsTabFragment"
-        android:label="@string/downloads"
+        android:label="@string/torrents"
         tools:layout="@layout/fragment_tab_lists">
         <action
             android:id="@+id/action_listsTab_to_downloadDetails"

@@ -30,6 +30,7 @@ import com.github.livingwithhippos.unchained.torrentdetails.model.getFilesNodes
 import com.github.livingwithhippos.unchained.torrentfilepicker.model.TorrentContentFilesSelectionAdapter
 import com.github.livingwithhippos.unchained.torrentfilepicker.viewmodel.TorrentEvent
 import com.github.livingwithhippos.unchained.torrentfilepicker.viewmodel.TorrentProcessingViewModel
+import com.github.livingwithhippos.unchained.utilities.EventObserver
 import com.github.livingwithhippos.unchained.utilities.Node
 import com.github.livingwithhippos.unchained.utilities.beforeSelectionStatusList
 import com.github.livingwithhippos.unchained.utilities.extension.copyToClipboard
@@ -73,6 +74,20 @@ class TorrentProcessingFragment : UnchainedFragment(), TorrentContentListener {
         _binding = FragmentTorrentProcessingBinding.inflate(inflater, container, false)
 
         setup(binding)
+
+        viewModel.messageLiveData.observe(
+            viewLifecycleOwner,
+            EventObserver { resId ->
+                android.widget.Toast.makeText(
+                        requireContext(),
+                        getString(resId),
+                        android.widget.Toast.LENGTH_LONG,
+                    )
+                    .show()
+                // nothing was added: leave the processing spinner instead of hanging on it
+                findNavController().popBackStack()
+            },
+        )
 
         viewModel.torrentLiveData.observe(viewLifecycleOwner) {
             when (val content = it.getContentIfNotHandled()) {

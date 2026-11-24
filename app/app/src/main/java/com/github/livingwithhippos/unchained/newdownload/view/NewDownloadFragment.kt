@@ -528,7 +528,13 @@ class NewDownloadFragment : UnchainedFragment() {
             viewModel.postMessage(getString(R.string.loading_torrent_file))
             requireContext().contentResolver.openInputStream(uri)?.use { inputStream ->
                 val buffer: ByteArray = inputStream.readBytes()
-                viewModel.fetchUploadedTorrent(buffer)
+                if (buffer.isEmpty()) {
+                    // an empty or truncated file is not a torrent; say so instead of opening an
+                    // empty New Download screen as if nothing happened
+                    viewModel.postMessage(getString(R.string.error_loading_file))
+                } else {
+                    viewModel.fetchUploadedTorrent(buffer)
+                }
             }
         } catch (exception: Exception) {
             when (exception) {

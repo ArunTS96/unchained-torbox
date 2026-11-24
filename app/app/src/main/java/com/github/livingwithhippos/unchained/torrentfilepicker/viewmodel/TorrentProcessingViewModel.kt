@@ -8,6 +8,8 @@ import com.github.livingwithhippos.unchained.data.model.EmptyBodyError
 import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
 import com.github.livingwithhippos.unchained.data.model.UploadedTorrent
+import com.github.livingwithhippos.unchained.R
+import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.repository.TorrentsRepository
 import com.github.livingwithhippos.unchained.torrentdetails.model.TorrentFileItem
 import com.github.livingwithhippos.unchained.utilities.EitherResult
@@ -32,16 +34,29 @@ class TorrentProcessingViewModel
 constructor(
     private val savedStateHandle: SavedStateHandle,
     private val torrentsRepository: TorrentsRepository,
+    private val torboxClient: TorboxClient,
 ) : ViewModel() {
 
     val networkExceptionLiveData = MutableLiveData<Event<UnchainedNetworkException>>()
     val torrentLiveData = MutableLiveData<Event<TorrentEvent>>()
     val structureLiveData = MutableLiveData<Event<Node<TorrentFileItem>>>()
+    val messageLiveData = MutableLiveData<Event<Int>>()
 
     private var job: Job? = null
 
     fun fetchAddedMagnet(magnet: String) {
         viewModelScope.launch {
+            // Re-adding a torrent the account already holds is not a no-op: TorBox replaces the
+            // entry with a new id and re-checks the payload. Refuse the add and say why.
+            val infohash =
+                Regex("urn:btih:([A-Za-z0-9]{32,40})")
+                    .find(magnet)
+                    ?.groupValues
+                    ?.get(1)
+            if (infohash != null && torboxClient.hasTorrentWithHash(infohash)) {
+                messageLiveData.postEvent(R.string.torrent_already_added)
+                return@launch
+            }
             val availableHosts = torrentsRepository.getAvailableHosts()
             if (availableHosts.isNullOrEmpty()) {
                 Timber.e("Error fetching available hosts")

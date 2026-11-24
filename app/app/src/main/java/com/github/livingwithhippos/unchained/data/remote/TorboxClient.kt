@@ -52,6 +52,9 @@ constructor(
                 authenticatedGet("torrents/mylist") {
                         addQueryParameter("limit", "1000")
                         addQueryParameter("offset", "0")
+                        // Without this the endpoint answers from a server-side cache, so a just
+                        // deleted torrent keeps reappearing in the list for a while.
+                        addQueryParameter("bypass_cache", "true")
                     }
                     .use { response ->
                         val body = response.body?.string().orEmpty()
@@ -96,6 +99,60 @@ constructor(
             } catch (t: Throwable) {
                 if (BuildConfig.DEBUG) android.util.Log.e(TORBOX_LOG, "user/me failed", t)
                 null
+            }
+        }
+
+    /** Epoch seconds when TorBox created this torrent, or null when it cannot be read. */
+    suspend fun torrentCreatedAt(id: Int): Long? =
+        withContext(Dispatchers.IO) {
+            try {
+                authenticatedGet("torrents/mylist") {
+                        addQueryParameter("id", id.toString())
+                        addQueryParameter("bypass_cache", "true")
+                    }
+                    .use { response ->
+                        if (!response.isSuccessful) return@use null
+                        val root = JSONObject(response.body?.string().orEmpty())
+                        val obj =
+                            when (val data = root.opt("data")) {
+                                is JSONArray -> data.optJSONObject(0)
+                                is JSONObject -> data
+                                else -> null
+                            } ?: return@use null
+                        val raw = obj.optString("created_at")
+                        if (raw.isBlank()) null
+                        else runCatching { java.time.Instant.parse(raw).epochSecond }.getOrNull()
+                    }
+            } catch (t: Throwable) {
+                null
+            }
+        }
+
+    /**
+     * True when the account already holds a torrent with this infohash. Re-adding one is not free:
+     * TorBox replaces the existing entry with a new id and re-checks the whole payload.
+     */
+    suspend fun hasTorrentWithHash(hash: String): Boolean =
+        withContext(Dispatchers.IO) {
+            try {
+                authenticatedGet("torrents/mylist") {
+                        addQueryParameter("limit", "1000")
+                        addQueryParameter("offset", "0")
+                        addQueryParameter("bypass_cache", "true")
+                    }
+                    .use { response ->
+                        if (!response.isSuccessful) return@use false
+                        val data =
+                            JSONObject(response.body?.string().orEmpty()).optJSONArray("data")
+                                ?: return@use false
+                        (0 until data.length()).any { index ->
+                            data.optJSONObject(index)
+                                ?.optString("hash")
+                                ?.equals(hash, ignoreCase = true) == true
+                        }
+                    }
+            } catch (t: Throwable) {
+                false
             }
         }
 
