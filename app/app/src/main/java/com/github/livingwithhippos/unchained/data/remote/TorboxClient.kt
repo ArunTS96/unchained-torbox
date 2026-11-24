@@ -5,6 +5,7 @@ import com.github.livingwithhippos.unchained.BuildConfig
 import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
 import com.github.livingwithhippos.unchained.data.model.DownloadItem
 import com.github.livingwithhippos.unchained.data.model.InnerTorrentFile
+import com.github.livingwithhippos.unchained.data.model.TorboxAccount
 import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.di.ClassicClient
 import com.github.livingwithhippos.unchained.utilities.BASE_URL
@@ -66,6 +67,35 @@ constructor(
             } catch (t: Throwable) {
                 if (BuildConfig.DEBUG) android.util.Log.e(TORBOX_LOG, "mylist failed", t)
                 emptyList()
+            }
+        }
+
+    /**
+     * Reads the account summary from `user/me`. Returns null on any failure: this is display-only and
+     * must never be able to disturb the authentication state, which `torrents/mylist` already proved.
+     * Never logs the body — it carries the account email.
+     */
+    suspend fun fetchAccount(): TorboxAccount? =
+        withContext(Dispatchers.IO) {
+            try {
+                authenticatedGet("user/me").use { response ->
+                    val body = response.body?.string().orEmpty()
+                    if (BuildConfig.DEBUG)
+                        android.util.Log.d(TORBOX_LOG, "user/me ${response.code} bytes=${body.length}")
+                    if (!response.isSuccessful) return@use null
+                    val data = JSONObject(body).optJSONObject("data") ?: return@use null
+                    TorboxAccount(
+                        isSubscribed = data.optBoolean("is_subscribed", false),
+                        expiresAt = data.optString("premium_expires_at")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        createdAt = data.optString("created_at")
+                            .takeIf { it.isNotBlank() && it != "null" },
+                        torrentsDownloaded = data.optInt("torrents_downloaded", 0),
+                    )
+                }
+            } catch (t: Throwable) {
+                if (BuildConfig.DEBUG) android.util.Log.e(TORBOX_LOG, "user/me failed", t)
+                null
             }
         }
 

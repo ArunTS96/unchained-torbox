@@ -33,6 +33,7 @@ import com.github.livingwithhippos.unchained.data.model.EmptyBodyError
 import com.github.livingwithhippos.unchained.data.model.NetworkError
 import com.github.livingwithhippos.unchained.data.model.TorrentItem
 import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
+import com.github.livingwithhippos.unchained.data.model.TorboxAccount
 import com.github.livingwithhippos.unchained.data.model.User
 import com.github.livingwithhippos.unchained.data.model.UserAction
 import com.github.livingwithhippos.unchained.data.remote.TorboxClient
@@ -406,9 +407,18 @@ constructor(
         return savedStateHandle["current_user_key"]
     }
 
+    /** Latest account summary, or nothing when `user/me` could not be read. Display-only. */
+    val accountLiveData = MutableLiveData<Event<TorboxAccount>>()
+
     fun fetchUser() {
-        // TorBox API keys do not expose the old Real-Debrid user profile endpoint.
+        viewModelScope.launch {
+            val account = torboxClient.fetchAccount() ?: return@launch
+            savedStateHandle["current_account_key"] = account
+            accountLiveData.postEvent(account)
+        }
     }
+
+    fun getCachedAccount(): TorboxAccount? = savedStateHandle["current_account_key"]
 
     fun checkCredentials() {
         viewModelScope.launch {

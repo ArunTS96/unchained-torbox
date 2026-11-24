@@ -776,4 +776,10 @@
     <string name="please_select_plugins">Please select at least a plugin</string>
     <string name="disabled">Disabled</string>
     <string name="prowlarr" translatable="false">Prowlarr</string>
+
+    <string name="account_plan_subscribed">TorBox Premium</string>
+    <string name="account_plan_free">TorBox — free plan</string>
+    <string name="account_expires_format">Expires %1$s · %2$d days left</string>
+    <string name="account_member_since_format">Member since %1$s</string>
+    <string name="account_torrents_format">%1$d torrents downloaded</string>
 </resources>
