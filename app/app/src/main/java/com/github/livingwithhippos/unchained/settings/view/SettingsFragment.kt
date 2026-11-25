@@ -214,12 +214,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 context?.showToast(R.string.updating_link_matcher)
             }
             "test_kodi" -> testKodiConnection()
-            "delete_external_plugins" -> {
-                val removedPlugins = viewModel.removeAllPlugins(requireContext())
-                if (removedPlugins >= 0)
-                    context?.showToast(getString(R.string.plugin_removed, removedPlugins))
-                else context?.showToast(getString(R.string.error))
-            }
             else -> return super.onPreferenceTreeClick(preference)
         }
 

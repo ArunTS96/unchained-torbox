@@ -30,7 +30,6 @@ import androidx.core.view.MenuProvider
 import androidx.core.view.forEach
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
@@ -80,7 +79,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
-    private var searchTabStartDestinationId: Int = R.id.pluginSearchFragment
     private var checkedUpdate: Boolean = false
 
     // Countly crash reporter set up. Debug mode only
@@ -371,10 +369,6 @@ class MainActivity : AppCompatActivity() {
 
                     "downloads" -> {
                         lifecycleScope.launch { doubleClickBottomItem(R.id.navigation_lists) }
-                    }
-
-                    "search" -> {
-                        lifecycleScope.launch { doubleClickBottomItem(R.id.navigation_search) }
                     }
                 }
             },
@@ -823,14 +817,7 @@ class MainActivity : AppCompatActivity() {
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment)
                 .navController
 
-        val searchGraphStartDestination = getSearchTabStartDestinationId()
         val rootGraph = navController.navInflater.inflate(R.navigation.nav_graph)
-        val searchGraph = rootGraph.findNode(R.id.navigation_search) as? NavGraph
-
-        if (searchGraph != null) {
-            searchGraph.setStartDestination(searchGraphStartDestination)
-            searchTabStartDestinationId = searchGraphStartDestination
-        }
         navController.setGraph(rootGraph, intent.extras)
 
         binding.bottomNavView.setupWithNavController(navController)
@@ -844,8 +831,6 @@ class MainActivity : AppCompatActivity() {
                     R.id.start_dest,
                     R.id.user_dest,
                     R.id.list_tabs_dest,
-                    R.id.search_dest,
-                    R.id.pluginSearchFragment,
                 )
             )
         setupActionBarWithNavController(navController, appBarConfiguration)
@@ -864,26 +849,8 @@ class MainActivity : AppCompatActivity() {
                             navController.popBackStack(R.id.list_tabs_dest, false)
                         }
                     }
-
-                    R.id.navigation_search -> {
-                        if (currentDestination?.id != searchTabStartDestinationId) {
-                            navController.popBackStack(searchTabStartDestinationId, false)
-                        }
-                    }
                 }
             }
-        }
-    }
-
-    private fun getSearchTabStartDestinationId(): Int {
-        return when (
-            preferences.getString(
-                PreferenceKeys.Ui.SEARCH_START_DESTINATION_KEY,
-                PreferenceKeys.Ui.SearchStartDestination.PLUGINS,
-            )
-        ) {
-            PreferenceKeys.Ui.SearchStartDestination.FILES -> R.id.search_dest
-            else -> R.id.pluginSearchFragment
         }
     }
 
@@ -919,9 +886,7 @@ class MainActivity : AppCompatActivity() {
                 previousDestination == null ||
                     previousDestination == R.id.authentication_dest ||
                     previousDestination == R.id.start_dest ||
-                    previousDestination == R.id.user_dest ||
-                    previousDestination == R.id.search_dest ||
-                    previousDestination == R.id.pluginSearchFragment
+                    previousDestination == R.id.user_dest
 
             exitCallback.isEnabled = onExitingFragment && backWouldExit
         }

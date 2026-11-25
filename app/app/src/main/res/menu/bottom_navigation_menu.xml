@@ -12,10 +12,4 @@
         android:icon="@drawable/icon_lists"
         android:contentDescription="@string/torrents"
         android:title="@string/torrents" />
-    <item
-        android:id="@+id/navigation_search"
-        android:enabled="true"
-        android:icon="@drawable/icon_search_symbol"
-        android:contentDescription="@string/search"
-        android:title="@string/search" />
 </menu>
