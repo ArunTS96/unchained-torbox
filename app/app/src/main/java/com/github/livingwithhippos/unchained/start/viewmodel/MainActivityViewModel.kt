@@ -39,10 +39,7 @@ import com.github.livingwithhippos.unchained.data.model.UserAction
 import com.github.livingwithhippos.unchained.data.remote.TorboxClient
 import com.github.livingwithhippos.unchained.data.repository.CustomDownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.HostsRepository
-import com.github.livingwithhippos.unchained.data.repository.InstallResult
 import com.github.livingwithhippos.unchained.data.repository.KodiDeviceRepository
-import com.github.livingwithhippos.unchained.data.repository.PluginRepository
-import com.github.livingwithhippos.unchained.data.repository.PluginRepository.Companion.TYPE_UNCHAINED
 import com.github.livingwithhippos.unchained.data.repository.RemoteDeviceRepository
 import com.github.livingwithhippos.unchained.data.repository.TorrentsRepository
 import com.github.livingwithhippos.unchained.data.repository.UpdateRepository
@@ -93,7 +90,6 @@ constructor(
     private val torboxClient: TorboxClient,
     private val torboxKeyStore: TorboxKeyStore,
     private val hostsRepository: HostsRepository,
-    private val pluginRepository: PluginRepository,
     private val kodiDeviceRepository: KodiDeviceRepository,
     private val customDownloadRepository: CustomDownloadRepository,
     private val torrentsRepository: TorrentsRepository,
@@ -629,15 +625,6 @@ constructor(
             when {
                 link.isMagnet() -> linkLiveData.postValue(Event(link))
                 link.isTorrent() -> linkLiveData.postValue(Event(link))
-                link.endsWith(TYPE_UNCHAINED, ignoreCase = true) -> {
-                    // only accept github links for now
-                    val newLink = convertGithubToRaw(link)
-                    if (newLink != null) linkLiveData.postValue(Event(newLink))
-                    else
-                        messageLiveData.postValue(
-                            Event(MainActivityMessage.StringID(R.string.invalid_url))
-                        )
-                }
                 else -> {
                     var matchFound = false
                     // check the hosts regexs
@@ -669,34 +656,6 @@ constructor(
         }
     }
 
-    private fun convertGithubToRaw(github: String): String? {
-        val username = "([^/]+)"
-        val repo = "([^/]+)"
-        val type = "(tree|blob)"
-        val branch = "([^/]+)"
-        val path = "(.+)"
-        when {
-            github.startsWith("https://www.github.com") ||
-                github.startsWith("https://github.com") -> {
-                val regex =
-                    "https?://(www.)?github.com/$username/$repo/$type/$branch/$path".toRegex()
-                val match: MatchResult = regex.find(github) ?: return null
-                return "https://raw.githubusercontent.com/" +
-                    match.groupValues[2] +
-                    "/" +
-                    match.groupValues[3] +
-                    "/" +
-                    match.groupValues[5] +
-                    "/" +
-                    match.groupValues[6]
-            }
-            github.startsWith("https://raw.githubusercontent.com") -> {
-                return github
-            }
-            else -> return null
-        }
-    }
-
     fun addTorrentId(torrentID: String) {
         viewModelScope.launch {
             val torrent: TorrentItem? = torrentsRepository.getTorrentInfo(torrentID)
@@ -705,12 +664,6 @@ constructor(
                 Timber.e(
                     "Could not retrieve torrent data from click on notification, id $torrentID"
                 )
-        }
-    }
-
-    fun addPluginFromDisk(context: Context, data: Uri) {
-        viewModelScope.launch {
-            postPluginInstallResult(pluginRepository.savePluginFromDisk(context, data))
         }
     }
 
@@ -1082,38 +1035,6 @@ constructor(
         return preferences.getBoolean(PreferenceKeys.DownloadManager.UNMETERED_ONLY_KEY, false)
     }
 
-    fun downloadPlugin(context: Context, url: String, repositoryURL: String?) {
-        viewModelScope.launch {
-            when (val result = customDownloadRepository.downloadPlugin(url)) {
-                is EitherResult.Failure -> {
-                    Timber.e("Error downloading plugin at $url:\n${result.failure}")
-                }
-                is EitherResult.Success -> {
-                    val installResult =
-                        pluginRepository.savePlugin(context, result.success, repositoryURL)
-                    postPluginInstallResult(installResult)
-                }
-            }
-        }
-    }
-
-    private fun postPluginInstallResult(result: InstallResult) {
-        when (result) {
-            is InstallResult.Error ->
-                messageLiveData.postValue(
-                    Event(MainActivityMessage.StringID(R.string.plugin_install_not_installed))
-                )
-            InstallResult.Incompatible ->
-                messageLiveData.postValue(
-                    Event(MainActivityMessage.StringID(R.string.plugin_install_incompatible))
-                )
-            InstallResult.Installed ->
-                messageLiveData.postValue(
-                    Event(MainActivityMessage.StringID(R.string.plugin_install_installed))
-                )
-        }
-    }
-
     companion object {
         const val KEY_DOWNLOAD_FOLDER = "download_folder_key"
         const val KEY_TORRENT_DOWNLOAD_ID = "torrent_download_id_key"
@@ -1128,8 +1049,6 @@ constructor(
 
 sealed class MainActivityMessage {
     data class StringID(val id: Int) : MainActivityMessage()
-
-    data class InstalledPlugins(val number: Int) : MainActivityMessage()
 
     data class UpdateFound(val signature: String) : MainActivityMessage()
 

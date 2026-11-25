@@ -38,7 +38,6 @@ import androidx.navigation.ui.setupWithNavController
 import com.github.livingwithhippos.unchained.BuildConfig
 import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.data.model.UserAction
-import com.github.livingwithhippos.unchained.data.repository.PluginRepository.Companion.TYPE_UNCHAINED
 import com.github.livingwithhippos.unchained.data.service.ForegroundTorrentService
 import com.github.livingwithhippos.unchained.data.service.ForegroundTorrentService.Companion.KEY_TORRENT_ID
 import com.github.livingwithhippos.unchained.databinding.ActivityMainBinding
@@ -347,10 +346,6 @@ class MainActivity : AppCompatActivity() {
         viewModel.linkLiveData.observe(this) {
             it?.getContentIfNotHandled()?.let { link ->
                 when {
-                    link.endsWith(TYPE_UNCHAINED, ignoreCase = true) -> {
-                        viewModel.downloadPlugin(applicationContext, link, null)
-                    }
-
                     else -> {
                         // check the authentication
                         processExternalRequestOnAuthentication(link.toUri())
@@ -392,17 +387,6 @@ class MainActivity : AppCompatActivity() {
 
         viewModel.messageLiveData.observe(this) {
             when (val content = it?.getContentIfNotHandled()) {
-                is MainActivityMessage.InstalledPlugins -> {
-                    lifecycleScope.launch {
-                        currentToast.cancel()
-                        // calling cancel stops the toast from showing on api 22 maybe others
-                        currentToast.setText(
-                            getString(R.string.n_plugins_installed, content.number)
-                        )
-                        currentToast.show()
-                    }
-                }
-
                 is MainActivityMessage.StringID -> {
                     lifecycleScope.launch {
                         currentToast.cancel()
@@ -657,16 +641,6 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                    "*/*" -> {
-                        val data: Uri? = intent.parcelable(Intent.EXTRA_STREAM)
-                        data?.let {
-                            if (
-                                it.lastPathSegment?.endsWith(TYPE_UNCHAINED, ignoreCase = true) ==
-                                    true
-                            )
-                                viewModel.addPluginFromDisk(applicationContext, it)
-                        }
-                    }
                 }
             }
             // files clicked
@@ -682,16 +656,8 @@ class MainActivity : AppCompatActivity() {
                         SCHEME_MAGNET,
                         SCHEME_CONTENT,
                         SCHEME_FILE -> {
-                            when {
-                                // check if it's a search plugin
-                                data.path?.endsWith(TYPE_UNCHAINED, ignoreCase = true) == true ->
-                                    viewModel.addPluginFromDisk(applicationContext, data)
-
-                                else -> {
-                                    // it's a magnet/torrent, check auth state before loading it
-                                    processExternalRequestOnAuthentication(data)
-                                }
-                            }
+                            // a magnet/torrent: check auth state before loading it
+                            processExternalRequestOnAuthentication(data)
                         }
 
                         SCHEME_HTTP,

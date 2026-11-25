@@ -22,7 +22,6 @@ import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
 import com.github.livingwithhippos.unchained.R
 import com.github.livingwithhippos.unchained.data.local.RemoteServiceType
-import com.github.livingwithhippos.unchained.repository.model.PluginStatus
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -179,19 +178,6 @@ fun getThemeColor(context: Context, @AttrRes resId: Int): Int {
     return typedValue.data
 }
 
-fun setDrawableByPluginStatus(view: ImageView, status: String, disabled: Boolean = false) {
-    if (disabled) return view.setImageResource(R.drawable.icon_close)
-    return when (status) {
-        PluginStatus.updated -> view.setImageResource(R.drawable.icon_check)
-        PluginStatus.hasUpdate -> view.setImageResource(R.drawable.icon_reload)
-        PluginStatus.hasIncompatibleUpdate -> view.setImageResource(R.drawable.icon_close)
-        PluginStatus.isNew -> view.setImageResource(R.drawable.icon_new_releases)
-        PluginStatus.incompatible -> view.setImageResource(R.drawable.icon_close)
-        PluginStatus.unknown -> view.setImageResource(R.drawable.icon_question_mark)
-        PluginStatus.disabled -> view.setImageResource(R.drawable.icon_close)
-        else -> view.setImageResource(R.drawable.icon_question_mark)
-    }
-}
 
 fun setDrawableByServiceType(view: ImageView, type: Int) {
     return when (type) {

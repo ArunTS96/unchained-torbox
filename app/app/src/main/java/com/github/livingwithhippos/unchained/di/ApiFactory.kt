@@ -30,7 +30,6 @@ import com.github.livingwithhippos.unchained.data.remote.UserApiHelperImpl
 import com.github.livingwithhippos.unchained.data.remote.VariousApi
 import com.github.livingwithhippos.unchained.data.remote.VariousApiHelper
 import com.github.livingwithhippos.unchained.data.remote.VariousApiHelperImpl
-import com.github.livingwithhippos.unchained.plugins.Parser
 import com.github.livingwithhippos.unchained.utilities.BASE_AUTH_URL
 import com.github.livingwithhippos.unchained.utilities.BASE_URL
 import dagger.Module
@@ -323,13 +322,4 @@ object ApiFactory {
     @Singleton
     fun provideCustomDownloadHelper(customHelper: CustomDownloadHelperImpl): CustomDownloadHelper =
         customHelper
-
-    /** Search Plugins stuff */
-    @Provides
-    @Singleton
-    fun provideParser(
-        preferences: SharedPreferences,
-        @ClassicClient classicClient: OkHttpClient,
-        @DOHClient dohClient: OkHttpClient,
-    ): Parser = Parser(preferences, classicClient, dohClient)
 }

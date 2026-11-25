@@ -1,11 +1,7 @@
 package com.github.livingwithhippos.unchained.data.repository
 
 import com.github.livingwithhippos.unchained.data.local.ProtoStore
-import com.github.livingwithhippos.unchained.data.model.UnchainedNetworkException
 import com.github.livingwithhippos.unchained.data.remote.CustomDownloadHelper
-import com.github.livingwithhippos.unchained.plugins.model.Plugin
-import com.github.livingwithhippos.unchained.repository.model.JsonPluginRepository
-import com.github.livingwithhippos.unchained.utilities.EitherResult
 import com.github.livingwithhippos.unchained.utilities.extension.isWebUrl
 import java.io.File
 import java.io.FileOutputStream
@@ -86,35 +82,6 @@ constructor(protoStore: ProtoStore, private val customDownloadHelper: CustomDown
         } else send(DownloadResult.WrongURL)
     }
 
-    suspend fun downloadPluginRepository(
-        link: String
-    ): EitherResult<UnchainedNetworkException, JsonPluginRepository> {
-
-        return eitherApiResult(
-            call = { customDownloadHelper.getPluginsRepository(link) },
-            errorMessage = "Error Fetching plugins repository",
-        )
-    }
-
-    suspend fun downloadPlugin(link: String): EitherResult<UnchainedNetworkException, Plugin> {
-        return eitherApiResult(
-            call = { customDownloadHelper.getPlugin(link) },
-            errorMessage = "Error fetching plugin",
-        )
-    }
-
-    /**
-     * Generic function to retrieve url bodies as strings
-     *
-     * @param url
-     * @return
-     */
-    suspend fun downloadAsString(url: String): EitherResult<UnchainedNetworkException, String> {
-        return eitherApiResult(
-            call = { customDownloadHelper.getAsString(url) },
-            errorMessage = "Error fetching url as a string",
-        )
-    }
 }
 
 sealed class DownloadResult {

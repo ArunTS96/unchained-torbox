@@ -12,7 +12,6 @@ import com.github.livingwithhippos.unchained.data.local.ProtoStore
 import com.github.livingwithhippos.unchained.data.local.TorboxKeyStore
 import com.github.livingwithhippos.unchained.data.repository.HostsRepository
 import com.github.livingwithhippos.unchained.data.repository.KodiRepository
-import com.github.livingwithhippos.unchained.data.repository.PluginRepository
 import com.github.livingwithhippos.unchained.settings.view.SettingsFragment.Companion.KEY_THEME_NEW
 import com.github.livingwithhippos.unchained.settings.view.ThemeItem
 import com.github.livingwithhippos.unchained.start.viewmodel.MainActivityViewModel.Companion.KEY_DOWNLOAD_FOLDER
@@ -27,7 +26,6 @@ class SettingsViewModel
 @Inject
 constructor(
     private val hostsRepository: HostsRepository,
-    private val pluginRepository: PluginRepository,
     private val kodiRepository: KodiRepository,
     private val protoStore: ProtoStore,
     private val preferences: SharedPreferences,
@@ -46,8 +44,6 @@ constructor(
             hostsRepository.updateFoldersRegex()
         }
     }
-
-    fun removeAllPlugins(context: Context): Int = pluginRepository.removeInstalledPlugins(context)
 
     fun testKodi(ip: String, port: Int, username: String?, password: String?) {
         viewModelScope.launch {
