@@ -149,30 +149,13 @@ class ListsTabFragment : UnchainedFragment() {
             Lifecycle.State.RESUMED,
         )
 
-        binding.tabs.addOnTabSelectedListener(
-            object : TabLayout.OnTabSelectedListener {
-                override fun onTabSelected(tab: TabLayout.Tab?) {
-                    // to restore on resume?
-                    if (tab != null) viewModel.setSelectedTab(tab.position)
-                }
-
-                override fun onTabUnselected(tab: TabLayout.Tab?) {
-                    // either do nothing or remove/add observers
-                }
-
-                override fun onTabReselected(tab: TabLayout.Tab?) {
-                    // either do nothing or refresh
-                }
-            }
-        )
-
         binding.fabNewDownload.setOnClickListener {
             val action = ListsTabFragmentDirections.actionListTabsDestToNewDownloadFragment()
             findNavController().navigate(action)
         }
 
         binding.fabScrollToTop.setOnClickListener {
-            viewModel.postScrollToTop(binding.tabs.selectedTabPosition)
+            viewModel.postScrollToTop(TORRENTS_TAB)
         }
 
         // an external link has been shared with the app
@@ -352,16 +335,11 @@ class ListsTabFragment : UnchainedFragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        val tabLayout: TabLayout = view.findViewById(R.id.tabs)
         val viewPager: ViewPager2 = view.findViewById(R.id.listPager)
 
+        // A single page now: the tab strip that used to switch between Torrents and the removed
+        // Downloads tab is gone, so the list starts at the top of the fragment.
         viewPager.adapter = ListsAdapter(this)
-
-        TabLayoutMediator(tabLayout, viewPager) { tab, _ ->
-                tab.text = getString(R.string.torrents)
-                tab.icon = requireContext().getThemedDrawable(R.drawable.icon_torrent_logo)
-            }
-            .attach()
 
         super.onViewCreated(view, savedInstanceState)
     }

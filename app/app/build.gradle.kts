@@ -44,8 +44,8 @@ android {
         applicationId = "com.arunts96.unchainedtorbox"
         minSdk = 27
         targetSdk = 37
-        versionCode = 8
-        versionName = "1.0.8"
+        versionCode = 9
+        versionName = "1.0.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
