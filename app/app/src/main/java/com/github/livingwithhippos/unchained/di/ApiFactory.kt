@@ -3,9 +3,6 @@ package com.github.livingwithhippos.unchained.di
 import android.content.SharedPreferences
 import com.github.livingwithhippos.unchained.BuildConfig
 import com.github.livingwithhippos.unchained.data.model.EmptyBodyInterceptor
-import com.github.livingwithhippos.unchained.data.remote.AuthApiHelper
-import com.github.livingwithhippos.unchained.data.remote.AuthApiHelperImpl
-import com.github.livingwithhippos.unchained.data.remote.AuthenticationApi
 import com.github.livingwithhippos.unchained.data.remote.CustomDownload
 import com.github.livingwithhippos.unchained.data.remote.CustomDownloadHelper
 import com.github.livingwithhippos.unchained.data.remote.CustomDownloadHelperImpl
@@ -225,17 +222,6 @@ object ApiFactory {
             .addConverterFactory(MoshiConverterFactory.create())
             .build()
     }
-
-    // authentication api injection
-    @Provides
-    @Singleton
-    fun provideAuthenticationApi(@AuthRetrofit retrofit: Retrofit): AuthenticationApi {
-        return retrofit.create(AuthenticationApi::class.java)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAuthenticationApiHelper(apiHelper: AuthApiHelperImpl): AuthApiHelper = apiHelper
 
     // user api injection
     @Provides

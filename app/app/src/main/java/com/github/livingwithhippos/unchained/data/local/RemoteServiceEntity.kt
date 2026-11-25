@@ -65,25 +65,14 @@ sealed class RemoteServiceType(
 
     data object VLC : RemoteServiceType(1, true, R.string.player_vlc, R.drawable.icon_vlc)
 
-    data object JACKETT : RemoteServiceType(2, false, R.string.jackett, R.drawable.icon_jackett)
 
-    data object PROWLARR : RemoteServiceType(3, false, R.string.prowlarr, R.drawable.icon_prowlarr)
 
-    /**
-     * A plain Torznab indexer addressed directly, e.g. Debrid Media Manager at
-     * `https://debridmediamanager.com/api/torznab` (key requires DMM sponsorship) or a self-hosted
-     * endpoint. Unlike Jackett/Prowlarr the address is already the API root.
-     */
-    data object TORZNAB : RemoteServiceType(4, false, R.string.torznab, R.drawable.icon_search_symbol)
 }
 
 val serviceTypeMap =
     mapOf(
         RemoteServiceType.KODI.value to RemoteServiceType.KODI,
         RemoteServiceType.VLC.value to RemoteServiceType.VLC,
-        RemoteServiceType.JACKETT.value to RemoteServiceType.JACKETT,
-        RemoteServiceType.PROWLARR.value to RemoteServiceType.PROWLARR,
-        RemoteServiceType.TORZNAB.value to RemoteServiceType.TORZNAB,
     )
 
 /** Helper class to have all the service details together */

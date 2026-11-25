@@ -119,37 +119,6 @@ class RemoteServiceFragment : Fragment() {
             }
 
             when (val serviceType = getServiceType(binding.servicePickerText.text.toString())) {
-                RemoteServiceType.JACKETT -> {
-                    val remoteService =
-                        RemoteService(
-                            id = serviceId,
-                            device = deviceID,
-                            name = name,
-                            port = port,
-                            username = username.ifBlank { null },
-                            password = password.ifBlank { null },
-                            type = serviceType.value,
-                            apiToken = apiToken,
-                            isDefault = false,
-                        )
-                    viewModel.updateService(remoteService)
-                }
-                RemoteServiceType.PROWLARR, RemoteServiceType.TORZNAB -> {
-                    val remoteService =
-                        RemoteService(
-                            id = serviceId,
-                            device = deviceID,
-                            name = name,
-                            port = port,
-                            username = username.ifBlank { null },
-                            password = password.ifBlank { null },
-                            type = serviceType.value,
-                            apiToken = apiToken,
-                            isDefault = false,
-                        )
-                    viewModel.updateService(remoteService)
-                }
-
                 RemoteServiceType.KODI -> {
                     val remoteService =
                         RemoteService(
@@ -243,18 +212,6 @@ class RemoteServiceFragment : Fragment() {
                 RemoteServiceType.VLC
             }
 
-            getString(R.string.jackett) -> {
-                RemoteServiceType.JACKETT
-            }
-
-            getString(R.string.torznab) -> {
-                RemoteServiceType.TORZNAB
-            }
-
-            getString(R.string.prowlarr) -> {
-                RemoteServiceType.PROWLARR
-            }
-
             else -> {
                 null
             }
@@ -280,18 +237,6 @@ class RemoteServiceFragment : Fragment() {
             RemoteServiceType.VLC -> {
                 binding.switchDefault.isEnabled = true
                 binding.tfApiToken.visibility = View.GONE
-            }
-
-            RemoteServiceType.JACKETT -> {
-                binding.switchDefault.isEnabled = false
-                binding.switchDefault.isChecked = false
-                binding.tfApiToken.visibility = View.VISIBLE
-            }
-
-            RemoteServiceType.PROWLARR, RemoteServiceType.TORZNAB -> {
-                binding.switchDefault.isEnabled = false
-                binding.switchDefault.isChecked = false
-                binding.tfApiToken.visibility = View.VISIBLE
             }
 
             null -> {

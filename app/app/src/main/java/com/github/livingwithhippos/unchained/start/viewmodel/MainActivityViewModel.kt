@@ -37,7 +37,6 @@ import com.github.livingwithhippos.unchained.data.model.TorboxAccount
 import com.github.livingwithhippos.unchained.data.model.User
 import com.github.livingwithhippos.unchained.data.model.UserAction
 import com.github.livingwithhippos.unchained.data.remote.TorboxClient
-import com.github.livingwithhippos.unchained.data.repository.AuthenticationRepository
 import com.github.livingwithhippos.unchained.data.repository.CustomDownloadRepository
 import com.github.livingwithhippos.unchained.data.repository.HostsRepository
 import com.github.livingwithhippos.unchained.data.repository.InstallResult
@@ -90,7 +89,6 @@ constructor(
     private val savedStateHandle: SavedStateHandle,
     private val preferences: SharedPreferences,
     private val protoStore: ProtoStore,
-    private val authRepository: AuthenticationRepository,
     private val variousApiRepository: VariousApiRepository,
     private val torboxClient: TorboxClient,
     private val torboxKeyStore: TorboxKeyStore,
