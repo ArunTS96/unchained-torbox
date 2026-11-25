@@ -30,14 +30,33 @@ constructor(
     private val keyStore: TorboxKeyStore,
 ) {
 
-    suspend fun validateKey(): Boolean =
+    /**
+     * What the key check could actually prove. A failed request is not a rejected key: TorBox
+     * documents 503 `AUTH_UNAVAILABLE` as saying nothing about the token, and 403/429 are about
+     * plans and limits. Only a 401 proves the key is bad, and only that may wipe it.
+     */
+    enum class KeyValidity {
+        VALID,
+        INVALID,
+        UNKNOWN,
+    }
+
+    suspend fun validateKey(): KeyValidity =
         withContext(Dispatchers.IO) {
             runCatching {
-            authenticatedGet("torrents/mylist") {
-                addQueryParameter("limit", "1")
-                addQueryParameter("offset", "0")
-            }.use { it.isSuccessful }
-            }.getOrDefault(false)
+                    authenticatedGet("torrents/mylist") {
+                            addQueryParameter("limit", "1")
+                            addQueryParameter("offset", "0")
+                        }
+                        .use { response ->
+                            when {
+                                response.isSuccessful -> KeyValidity.VALID
+                                response.code == 401 -> KeyValidity.INVALID
+                                else -> KeyValidity.UNKNOWN
+                            }
+                        }
+                }
+                .getOrDefault(KeyValidity.UNKNOWN)
         }
 
     suspend fun createMagnet(magnet: String): Result<Int> =

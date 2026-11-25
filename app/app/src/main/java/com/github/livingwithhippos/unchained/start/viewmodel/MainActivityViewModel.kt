@@ -422,12 +422,22 @@ constructor(
         viewModelScope.launch {
             if (torboxKeyStore.read().isNullOrBlank()) {
                 transitionAuthenticationMachine(FSMAuthenticationEvent.OnNotWorking)
-            } else if (torboxClient.validateKey()) {
-                transitionAuthenticationMachine(FSMAuthenticationEvent.OnWorkingPrivateToken)
-            } else {
-                torboxKeyStore.clear()
-                protoStore.deleteCredentials()
-                transitionAuthenticationMachine(FSMAuthenticationEvent.OnNotWorking)
+                return@launch
+            }
+            when (torboxClient.validateKey()) {
+                TorboxClient.KeyValidity.VALID ->
+                    transitionAuthenticationMachine(FSMAuthenticationEvent.OnWorkingPrivateToken)
+                // Only a 401 means the key is wrong. Everything else — no network, timeouts,
+                // 5xx, rate limits — must leave the key alone and offer a retry instead.
+                TorboxClient.KeyValidity.INVALID -> {
+                    torboxKeyStore.clear()
+                    protoStore.deleteCredentials()
+                    transitionAuthenticationMachine(FSMAuthenticationEvent.OnNotWorking)
+                }
+                TorboxClient.KeyValidity.UNKNOWN ->
+                    transitionAuthenticationMachine(
+                        FSMAuthenticationEvent.OnUserActionNeeded(UserAction.RETRY_LATER)
+                    )
             }
         }
     }
