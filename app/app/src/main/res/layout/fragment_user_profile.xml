@@ -22,7 +22,7 @@
             android:maxLines="2"
             android:textAlignment="viewStart"
             android:textAppearance="?attr/textAppearanceTitleLarge"
-            app:layout_constraintEnd_toStartOf="@id/ivProfilePic"
+            app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toStartOf="@id/cvPremium"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -36,7 +36,7 @@
             android:maxLines="1"
             android:textAlignment="viewStart"
             android:textAppearance="?attr/textAppearanceLabelMedium"
-            app:layout_constraintEnd_toStartOf="@id/ivProfilePic"
+            app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toStartOf="@id/tvName"
             app:layout_constraintTop_toBottomOf="@id/tvName" />
 
@@ -63,7 +63,7 @@
             android:padding="10dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ivProfilePic"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintWidth_max="500dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
@@ -99,7 +99,6 @@
                     android:indeterminate="false"
                     android:max="1000"
                     app:indicatorSize="25dp"
-                    app:layout_constraintBottom_toTopOf="@+id/tvPoints"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/tvPremiumDays"
                     app:trackCornerRadius="20dp"
@@ -132,7 +131,6 @@
             android:autoLink="web"
             android:textAlignment="center"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            app:layout_constraintBottom_toTopOf="@+id/divider"
             app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toStartOf="@id/cvPremium"
             app:layout_constraintTop_toBottomOf="@id/cvPremium" />
@@ -142,7 +140,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            app:layout_constraintBottom_toTopOf="@+id/tvDescription"
             app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toStartOf="@id/cvPremium"
             app:layout_constraintTop_toBottomOf="@+id/tvLoginDescription" />
@@ -157,7 +154,6 @@
             android:text="@string/rd_settings_link_description"
             android:textAlignment="center"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            app:layout_constraintBottom_toTopOf="@+id/bAccount"
             app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toStartOf="@id/cvPremium"
             app:layout_constraintTop_toBottomOf="@id/divider" />
@@ -171,6 +167,7 @@
             android:layout_marginEnd="20dp"
             android:nextFocusRight="@id/bSettings"
             android:text="@string/account_page"
+            android:visibility="gone"
             app:layout_constraintEnd_toStartOf="@+id/bSettings"
             app:layout_constraintStart_toStartOf="@id/cvPremium"
             app:layout_constraintTop_toBottomOf="@id/tvDescription" />
@@ -179,11 +176,11 @@
             android:id="@+id/bSettings"
             style="@style/Widget.Material3.Button"
             android:layout_width="0dp"
-            android:layout_height="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:nextFocusLeft="@id/bAccount"
             android:text="@string/settings"
-            app:layout_constraintBottom_toBottomOf="@id/bAccount"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@id/cvPremium"
             app:layout_constraintStart_toEndOf="@+id/bAccount"
             app:layout_constraintTop_toTopOf="@id/bAccount" />
