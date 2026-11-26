@@ -319,7 +319,6 @@
     <string name="kodi_remote_control">Kodi uzaktan kontrol talimatları</string>
     <string name="enable_kodi_control">Kodi\'yi uzaktan kontrol için ayarlamak için talimatlar için buraya dokunun (genellikle sistem->hizmetler->kontrol altında etkinleştirilir)</string>
     <string name="only_if_auth">Yalnızca Kodi\'de kimlik doğrulama etkinleştirilmişse gereklidir</string>
-    <string name="rd_status">Real Debrid durumu</string>
     <string name="show_kodi">Kodi düğmesini göster</string>
     <string name="only_big_files">Yalnızca büyük dosyalar</string>
     <string name="filter_type">Yalnızca medya dosyaları</string>

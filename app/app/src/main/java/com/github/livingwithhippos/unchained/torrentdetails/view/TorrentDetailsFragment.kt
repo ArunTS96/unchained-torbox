@@ -309,7 +309,7 @@ class TorrentDetailsFragment : UnchainedFragment(), TorrentContentListener {
     }
 
     fun onCopyMagnetClick() {
-        copyToClipboard("Real-Debrid Magnet", "magnet:?xt=urn:btih:${args.item.hash}")
+        copyToClipboard("Magnet link", "magnet:?xt=urn:btih:${args.item.hash}")
         context?.showToast(R.string.link_copied)
     }
 

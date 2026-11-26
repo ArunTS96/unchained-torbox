@@ -319,7 +319,6 @@
     <string name="kodi_remote_control">Kodi 원격 제어 지침</string>
     <string name="enable_kodi_control">원격 제어를 위해 Kodi를 설정하는 방법을 보려면 여기를 누르세요 (보통 설정->서비스->제어에서 활성화)</string>
     <string name="only_if_auth">Kodi에서 인증이 활성화된 경우에만 필요함</string>
-    <string name="rd_status">Real Debrid 상태</string>
     <string name="show_kodi">Kodi 버튼 표시</string>
     <string name="only_big_files">큰 파일만</string>
     <string name="filter_type">미디어 파일만</string>

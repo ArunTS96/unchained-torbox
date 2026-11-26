@@ -667,7 +667,7 @@ class DownloadDetailsFragment : UnchainedFragment(), DownloadDetailsListener {
     }
 
     override fun onCopyClick(text: String) {
-        copyToClipboard("Real-Debrid Download Link", text)
+        copyToClipboard("TorBox download link", text)
         context?.showToast(R.string.link_copied)
     }
 

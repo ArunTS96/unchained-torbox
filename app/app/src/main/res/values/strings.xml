@@ -159,7 +159,8 @@
                     Various projects, resources, and people have helped in the creation of this app. A thank goes to:
                     <br>
                     <ul>
-                    <li> Real Debrid people for all their work </li>
+                    <li> <a href="https://github.com/the Unchained authors and the Unchained for TorBox fork/unchained-android" target="_blank" rel="noopener noreferrer">Unchained</a> by the Unchained authors and the Unchained for TorBox fork, which this app is forked from (GPL-3.0) </li>
+                    <li> TorBox for the API this app talks to </li>
                     <li> @oathzed for testing every nooks and cranny of the app</li>
                     <li> rawpixel.com for inspiring the logo and symbols with the <a href="https://www.rawpixel.com/image/843352/minimal-logo-designs-set" target="_blank" rel="noopener noreferrer">minimal logo design set</a> </li>
                     </ul>
@@ -180,9 +181,9 @@
                           to translate the app into other languages, or make derivative
                           versions. The app itself, and all the trade marks, copyright,
                           database rights and other intellectual property rights related
-                          to it, still belong to LivingWithHippos.
+                          to it, still belong to the Unchained authors and the Unchained for TorBox fork.
                         </p> <p>
-                          LivingWithHippos is committed to ensuring that the app is
+                          the Unchained authors and the Unchained for TorBox fork is committed to ensuring that the app is
                           as useful and efficient as possible. For that reason, we
                           reserve the right to make changes to the app or to charge for
                           its services, at any time and for any reason. We will never
@@ -201,10 +202,10 @@
                           that the Unchained app won’t work properly or at all.
                         </p> <!----> <p>
                           You should be aware that there are certain things that
-                          LivingWithHippos will not take responsibility for. Certain
+                          the Unchained authors and the Unchained for TorBox fork will not take responsibility for. Certain
                           functions of the app will require the app to have an active
                           internet connection. The connection can be Wi-Fi, or provided
-                          by your mobile network provider, but LivingWithHippos
+                          by your mobile network provider, but the Unchained authors and the Unchained for TorBox fork
                           cannot take responsibility for the app not working at full
                           functionality if you don’t have access to Wi-Fi, and you don’t
                           have any of your data allowance left.
@@ -222,18 +223,18 @@
                           using the app, please be aware that we assume that you have
                           received permission from the bill payer for using the app.
                         </p> <p>
-                          Along the same lines, LivingWithHippos cannot always take
+                          Along the same lines, the Unchained authors and the Unchained for TorBox fork cannot always take
                           responsibility for the way you use the app i.e. You need to
                           make sure that your device stays charged – if it runs out of
                           battery and you can’t turn it on to avail the Service,
-                          LivingWithHippos cannot accept responsibility.
+                          the Unchained authors and the Unchained for TorBox fork cannot accept responsibility.
                         </p> <p>
-                          With respect to LivingWithHippos’s responsibility for your
+                          With respect to the Unchained authors and the Unchained for TorBox fork’s responsibility for your
                           use of the app, when you’re using the app, it’s important to
                           bear in mind that although we endeavour to ensure that it is
                           updated and correct at all times, we do rely on third parties
                           to provide information to us so that we can make it available
-                          to you. LivingWithHippos accepts no liability for any
+                          to you. the Unchained authors and the Unchained for TorBox fork accepts no liability for any
                           loss, direct or indirect, you experience as a result of
                           relying wholly on this functionality of the app.
                         </p> <p>
@@ -242,7 +243,7 @@
                           system(and for any additional systems we
                           decide to extend the availability of the app to) may change,
                           and you’ll need to download the updates if you want to keep
-                          using the app. LivingWithHippos does not promise that it
+                          using the app. the Unchained authors and the Unchained for TorBox fork does not promise that it
                           will always update the app so that it is relevant to you
                           and/or works with the Android version that you have
                           installed on your device. However, you promise to always
@@ -275,9 +276,9 @@
         <![CDATA[
         <body>
     <strong>Privacy Policy</strong> <p>
-                  LivingWithHippos built the Unchained app as
+                  the Unchained authors and the Unchained for TorBox fork built the Unchained app as
                   an Open Source app. This SERVICE is provided by
-                  LivingWithHippos at no cost and is intended for use as
+                  the Unchained authors and the Unchained for TorBox fork at no cost and is intended for use as
                   is.
                 </p> <p>
                   This page is used to inform visitors regarding my
@@ -538,7 +539,6 @@
     <string name="kodi_remote_control">Kodi remote control instructions</string>
     <string name="enable_kodi_control">Tap here for instructions on how to set up Kodi for remote control (usually enabled in system->services->control)</string>
     <string name="only_if_auth">Required only if the authentication is enabled in Kodi</string>
-    <string name="rd_status">Real Debrid status</string>
     <string name="show_kodi">Show Kodi button</string>
     <string name="only_big_files">Only big files</string>
     <string name="filter_type">Only media files</string>
@@ -555,7 +555,7 @@
     <string name="unsupported_file">File not supported</string>
     <string name="hoster">Hoster</string>
     <string name="retry_login">Retry</string>
-    <string name="generic_login_error">An error occurred during login. You can check your connection, try again in a while, or log in from real-debrid.com for more information.</string>
+    <string name="generic_login_error">The TorBox API key could not be verified. Check your connection and try again, or confirm the key at torbox.app.</string>
     <string name="retry_later">Retry later</string>
     <string name="content_description_plugins_link">Link to plugins page</string>
     <string name="get_plugins">Get more plugins</string>
@@ -784,5 +784,4 @@
     <string name="account_torrents_format">%1$d torrents downloaded</string>
     <string name="torrent_already_added">This torrent is already in your list</string>
     <string name="torznab" translatable="false">Torznab</string>
-    <string name="torznab_dmm_hint">Debrid Media Manager: https://debridmediamanager.com/api/torznab — its API key comes with a DMM sponsorship</string>
 </resources>
