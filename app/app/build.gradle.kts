@@ -44,8 +44,8 @@ android {
         applicationId = "com.arunts96.unchainedtorbox"
         minSdk = 27
         targetSdk = 37
-        versionCode = 12
-        versionName = "1.0.12"
+        versionCode = 13
+        versionName = "1.0.13"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -201,7 +201,12 @@ androidComponents {
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
             val versionName = output.versionName.orNull ?: "unspecified"
-            output.outputFileName.set("${variant.name}-$versionName.apk")
+            // Release builds are the thing people download: name them after the app and the
+            // version, nothing else. Debug variants keep the prefix so the two never collide.
+            output.outputFileName.set(
+                if (variant.buildType == "release") "unchained-torbox-$versionName.apk"
+                else "${variant.name}-$versionName.apk"
+            )
         }
     }
 }
