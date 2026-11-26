@@ -30,10 +30,6 @@
             app:useSimpleSummaryProvider="true" />
 
         <Preference
-            app:summary="@string/custom_downloader_options_description"
-            app:title="@string/custom_downloader_options" />
-
-        <Preference
             app:key="download_folder_key"
             app:summary="@string/pick_download_folder_description"
             app:title="@string/pick_download_folder" />
@@ -49,44 +45,6 @@
             app:summary="@string/unmetered_downloads_description"
             app:title="@string/unmetered_downloads" />
 
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        android:title="@string/remote_devices"
-        app:allowDividerBelow="false">
-
-        <Preference
-            app:key="manage_remote_devices"
-            app:summary="@string/remote_devices_summary"
-            app:title="@string/manage_remote_devices" />
-
-        <Preference
-            app:key="kodi_remote_control_info"
-            app:summary="@string/enable_kodi_control"
-            app:title="@string/kodi_remote_control" />
-
-        <PreferenceCategory
-            android:title="@string/default_media_player"
-            app:allowDividerAbove="false"
-            app:allowDividerBelow="false">
-            <DropDownPreference
-                android:defaultValue="vlc"
-                android:entries="@array/default_media_player"
-                android:entryValues="@array/default_media_player_values"
-                android:key="default_media_player"
-                android:title="@string/default_media_player"
-                app:useSimpleSummaryProvider="true" />
-
-            <Preference android:summary="@string/custom_media_player_summary" />
-
-            <EditTextPreference
-                android:defaultValue=""
-                android:key="custom_media_player"
-                android:selectAllOnFocus="true"
-                android:singleLine="true"
-                android:title="@string/custom_media_player"
-                app:useSimpleSummaryProvider="true" />
-        </PreferenceCategory>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/notifications">
@@ -124,15 +82,6 @@
 
         <PreferenceCategory android:title="@string/download_details">
 
-            <SeekBarPreference
-                android:defaultValue="50"
-                android:max="2500"
-                android:min="50"
-                app:key="paging_size"
-                app:showSeekBarValue="true"
-                app:summary="@string/summary_loading_size"
-                app:title="@string/loading_size" />
-
             <Preference app:summary="@string/download_details_button_choice" />
 
             <SwitchPreference
@@ -155,22 +104,6 @@
                 app:key="show_download_button"
                 app:title="@string/show_download_button" />
 
-            <SwitchPreference
-                android:defaultValue="true"
-                app:key="show_media_button"
-                app:summary="@string/show_media_player_button_summary"
-                app:title="@string/show_media_player_button" />
-
-            <SwitchPreference
-                android:defaultValue="true"
-                android:key="show_streaming"
-                android:title="@string/show_streaming" />
-
-            <SwitchPreference
-                android:defaultValue="true"
-                android:key="show_load_stream_button"
-                android:title="@string/show_load_stream_button" />
-
         </PreferenceCategory>
 
     </PreferenceCategory>
@@ -189,12 +122,6 @@
             android:singleLine="true"
             android:summary="@string/file_size_filter_description"
             android:title="@string/file_size_filter" />
-
-        <SwitchPreference
-            android:defaultValue="false"
-            app:key="use_referral_key"
-            app:summary="@string/referral_summary"
-            app:title="@string/referral" />
 
         <Preference
             app:key="update_regexps"
